@@ -1,6 +1,3 @@
-// This is needed for objc
-#![allow(unexpected_cfgs)]
-
 use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -22,8 +19,6 @@ use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::macos::BUNDLE_CONTENTS_HELPERS_PATH;
 use macos_utils::applications;
-use objc::runtime::Object;
-use objc::{class, msg_send, sel, sel_impl};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tracing::{debug, info, trace};
@@ -412,21 +407,6 @@ impl InputMethod {
     }
 }
 
-fn str_to_nsstring(str: &str) -> &Object {
-    const UTF8_ENCODING: usize = 4;
-    unsafe {
-        let ns_string: &mut Object = msg_send![class!(NSString), alloc];
-        let ns_string: &mut Object = msg_send![
-            ns_string,
-            initWithBytes: str.as_ptr()
-            length: str.len()
-            encoding: UTF8_ENCODING
-        ];
-        let _: () = msg_send![ns_string, autorelease];
-        ns_string
-    }
-}
-
 #[async_trait]
 impl Integration for InputMethod {
     async fn is_installed(&self) -> Result<()> {
@@ -535,27 +515,23 @@ impl Integration for InputMethod {
             .join("MacOS")
             .join(CLI_BINARY_NAME);
 
-        // TIS caches source lists and enabled flags in the calling process.
-        // Activate in a fresh CLI process, then verify in a second fresh process.
-        // In particular, do not query the desktop's pre-registration snapshot.
-        let mut enable = true;
+        // Enable on the desktop's main thread; verify the cached TIS properties
+        // in a separate process. Both registration and activation may settle later.
         let mut installed = false;
         let mut last_error = String::from("The helper is not visible to macOS yet");
         for _ in 0..15 {
+            if let Err(error) = run_on_main(|| self.input_source()?.enable()) {
+                last_error = error.to_string();
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                continue;
+            }
             let mut command = tokio::process::Command::new(&q_cli_path);
             command
                 .args(["_", "attempt-to-finish-input-method-installation"])
                 .arg(&self.bundle_path)
                 .kill_on_drop(true);
-            if enable {
-                command.arg("--enable");
-            }
             match tokio::time::timeout(std::time::Duration::from_secs(3), command.output()).await {
                 Ok(Ok(out)) if out.status.success() => {
-                    if enable {
-                        enable = false;
-                        continue;
-                    }
                     installed = true;
                     break;
                 }
@@ -565,7 +541,6 @@ impl Integration for InputMethod {
                         last_error = String::from_utf8_lossy(&out.stderr).trim().to_owned();
                     }
                     debug!(%last_error, "Cursor helper activation is not ready");
-                    enable = true;
                 }
                 Ok(Err(error)) => return Err(error).with_context(|_| format!("Could not run {CLI_BINARY_NAME} cli")),
                 Err(_) => last_error = String::from("The activation process timed out"),
@@ -604,35 +579,37 @@ impl Integration for InputMethod {
 
         let destination = self.target_bundle_path()?;
 
-        let binding = run_on_main(|| {
-            let input_source = self.input_source()?;
-            input_source.deselect()?;
-            input_source.disable()?;
-
-            Ok::<_, InputMethodError>(input_source.bundle_id())
-        })?;
-
-        let binding = binding.ok_or_else(|| InputMethodError::InvalidBundle {
-            inner: "Could not get bundle id".into(),
-        })?;
-
-        // todo(mschrage): Terminate input method binary using Cocoa APIs
-        unsafe {
-            let bundle_id: &Object = str_to_nsstring(binding.as_str());
-            let running_input_method_array: &mut Object = msg_send![
-                class!(NSRunningApplication),
-                runningApplicationsWithBundleIdentifier: bundle_id
-            ];
-            let running_input_method_array_len: u64 = msg_send![running_input_method_array, count];
-
-            if running_input_method_array_len > 0 {
-                let running_input_method: &mut Object = msg_send![running_input_method_array, objectAtIndex: 0];
-
-                let _: () = msg_send![running_input_method, terminate];
+        match fs::read_link(&destination).await {
+            Ok(target) if target == self.bundle_path => {}
+            Ok(_) => {
+                return Err(InputMethodError::InvalidBundle {
+                    inner: "Refusing to remove a helper link owned by another installation".into(),
+                }
+                .into());
             }
+            Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error.into()),
         }
-
-        // Remove symbolic link
+        run_on_main(|| {
+            match self.input_source() {
+                Ok(source) => {
+                    if source.is_selected().unwrap_or(false) {
+                        source.deselect()?;
+                    }
+                    if source.is_enabled().unwrap_or(false) {
+                        source.disable()?;
+                    }
+                    Ok(())
+                }
+                // A partial registration still needs its owned link cleaned up.
+                Err(
+                    InputMethodError::CouldNotListInputSources
+                    | InputMethodError::NoInputSourcesForBundleIdentifier { .. },
+                ) => Ok(()),
+                Err(error) => Err(error),
+            }
+        })?;
+        self.terminate()?;
         fs::remove_file(destination).await?;
 
         Ok(())
@@ -742,7 +719,11 @@ where
 {
     cfg_if::cfg_if! {
         if #[cfg(feature = "dispatch")] {
-            dispatch::Queue::main().exec_sync(work)
+            if unsafe { core_foundation::runloop::CFRunLoopGetCurrent() == core_foundation::runloop::CFRunLoopGetMain() } {
+                work()
+            } else {
+                dispatch::Queue::main().exec_sync(work)
+            }
         } else {
             work()
         }

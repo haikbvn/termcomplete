@@ -75,6 +75,61 @@ fn cursor_helper_activation_errors_are_structured() {
     }
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn helper_only_requests_the_desktop_without_editing_shell_files() {
+    use std::os::unix::fs::PermissionsExt;
+    use fig_ipc::{BufferedUnixStream, RecvMessage, SendMessage};
+    use fig_proto::local::{self, command, command_response, local_message};
+    let root = tempfile::Builder::new()
+        .prefix("tcomp-ipc-")
+        .tempdir_in("/private/tmp")
+        .unwrap();
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let shell = root.path().join("shell");
+    std::fs::create_dir(&shell).unwrap();
+    std::fs::write(shell.join(".zshrc"), "# preserve this shell configuration\n").unwrap();
+    let listener = tokio::net::UnixListener::bind(root.path().join("desktop.sock")).unwrap();
+    let server = tokio::spawn(async move {
+        for action in [local::InputMethodAction::Install, local::InputMethodAction::Uninstall] {
+            let (socket, _) = listener.accept().await.unwrap();
+            let mut socket = BufferedUnixStream::new(socket);
+            let message: local::LocalMessage = socket.recv_message().await.unwrap().unwrap();
+            let Some(local_message::Type::Command(request)) = message.r#type else {
+                panic!("Expected command")
+            };
+            let Some(command::Command::InputMethod(helper)) = request.command else {
+                panic!("Expected helper request")
+            };
+            assert_eq!(helper.actions(), action);
+            socket
+                .send_message(local::CommandResponse {
+                    id: request.id,
+                    response: Some(command_response::Response::Success(local::SuccessResponse {
+                        message: None,
+                    })),
+                })
+                .await
+                .unwrap();
+        }
+    });
+    for action in ["install", "uninstall"] {
+        let output = cli()
+            .args([action, "--input-method-only"])
+            .env("TCOMP_RUNTIME_DIR", root.path())
+            .env("TCOMP_DATA_DIR", root.path().join("data"))
+            .env("TCOMP_SHELL_CONFIG_DIR", &shell)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    }
+    server.await.unwrap();
+    assert_eq!(
+        std::fs::read_to_string(shell.join(".zshrc")).unwrap(),
+        "# preserve this shell configuration\n"
+    );
+    assert!(!shell.join(".bashrc").exists());
+}
+
 #[test]
 fn generated_bash_and_zsh_parse_without_login_or_ai_hooks() {
     for (shell, exe) in [("bash", "/bin/bash"), ("zsh", "/bin/zsh")] {

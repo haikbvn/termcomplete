@@ -149,6 +149,7 @@ async fn handle_local_ipc<Ctx>(
                             OpenBrowser(command) => commands::open_browser(command).await,
                             PromptAccessibility(_) => commands::prompt_for_accessibility_permission(&ctx).await,
                             LogLevel(command) => commands::log_level(command),
+                            InputMethod(command) => commands::input_method(command).await,
                             Login(_) | Logout(_) => Err(LocalResponse::Error {
                                 code: None,
                                 message: Some("Termcomplete does not use accounts".into()),
@@ -186,8 +187,7 @@ async fn handle_local_ipc<Ctx>(
                             | ReportWindow(_)
                             | RestartSettingsListener(_)
                             | RunInstallScript(_)
-                            | ResetCache(_)
-                            | InputMethod(_) => {
+                            | ResetCache(_) => {
                                 debug!(?command, "Unhandled command");
                                 Err(LocalResponse::Error {
                                     code: None,

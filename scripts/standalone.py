@@ -23,6 +23,11 @@ def assemble(target, release, output):
     binaries = ROOT / "target" / target / profile
     if not binaries.exists():
         binaries = ROOT / "target" / profile
+    expected_arch = "arm64" if target == "aarch64-apple-darwin" else "x86_64"
+    for binary in ["tcomp", "tcomp-term", "tcomp-desktop", "fig_input_method"]:
+        actual_arch = subprocess.check_output(["lipo", "-archs", str(binaries / binary)], text=True).strip()
+        if actual_arch != expected_arch:
+            raise SystemExit(f"{binary}: expected {expected_arch}, found {actual_arch}; refusing to mislabel the package")
     app = output / "Termcomplete.app"
     if app.exists():
         shutil.rmtree(app)

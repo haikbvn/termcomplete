@@ -34,11 +34,37 @@ pub async fn install(uninstall: bool, shell_only: bool, input_method_only: bool)
         }
     }
     if !shell_only {
-        let input = fig_integrations::input_method::InputMethod::default();
-        if uninstall {
-            input.uninstall().await?;
+        if directories::desktop_socket_path().is_ok_and(|path| path.exists()) {
+            use fig_proto::local::{
+                InputMethodAction, InputMethodCommand, command::Command, command_response::Response,
+            };
+            let action = if uninstall {
+                InputMethodAction::Uninstall
+            } else {
+                InputMethodAction::Install
+            };
+            let response = fig_ipc::local::send_recv_command_to_socket_with_timeout(
+                Command::InputMethod(InputMethodCommand {
+                    actions: Some(action.into()),
+                }),
+                std::time::Duration::from_secs(70),
+            )
+            .await?;
+            match response.and_then(|response| response.response) {
+                Some(Response::Success(_)) => {}
+                Some(Response::Error(error)) => bail!(
+                    "{}",
+                    error.message.unwrap_or_else(|| "Cursor helper setup failed".into())
+                ),
+                _ => bail!("The desktop returned an invalid cursor-helper response"),
+            }
         } else {
-            input.install().await?;
+            let input = fig_integrations::input_method::InputMethod::default();
+            if uninstall {
+                input.uninstall().await?;
+            } else {
+                input.install().await?;
+            }
         }
     }
     println!(

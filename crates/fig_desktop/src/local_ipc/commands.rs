@@ -239,3 +239,27 @@ pub async fn bundle_metadata(ctx: &Context) -> LocalResult {
         }),
     }
 }
+
+/// Keep helper activation in the GUI process and its main-thread run loop.
+pub async fn input_method(command: fig_proto::local::InputMethodCommand) -> LocalResult {
+    use fig_integrations::Integration;
+    use fig_proto::local::InputMethodAction;
+    let input = fig_integrations::input_method::InputMethod::default();
+    let result = match command.actions() {
+        InputMethodAction::Install => input.install().await,
+        InputMethodAction::Uninstall => input.uninstall().await,
+        InputMethodAction::StatusOf => input.is_installed().await,
+        _ => {
+            return Err(LocalResponse::Error {
+                code: None,
+                message: Some("Use install or uninstall to manage the cursor helper".into()),
+            });
+        }
+    };
+    result
+        .map(|_| LocalResponse::Success(None))
+        .map_err(|error| LocalResponse::Error {
+            code: None,
+            message: Some(error.to_string()),
+        })
+}
