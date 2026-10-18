@@ -254,6 +254,18 @@ impl InputMethod {
     pub fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
         debug!("Registering input source...");
 
+        // LaunchServices does not recognize the symlink as an application.
+        // Register the actual embedded bundle before registering its input-source link.
+        let actual_path = location
+            .as_ref()
+            .canonicalize()
+            .map_err(|_| InputMethodError::InvalidDestination)?;
+        let actual_url = CFURL::from_path(actual_path, true).ok_or(InputMethodError::InvalidDestination)?;
+        let status = unsafe { LSRegisterURL(actual_url.as_concrete_TypeRef(), true) };
+        if status != 0 {
+            return Err(InputMethodError::OSStatusError(status));
+        }
+
         let url = match CFURL::from_path(location, true) {
             Some(url) => url,
             None => return Err(InputMethodError::InvalidDestination),
@@ -289,6 +301,11 @@ unsafe extern "C" {
 
 #[link(name = "AppKit", kind = "framework")]
 unsafe extern "C" {}
+
+#[link(name = "CoreServices", kind = "framework")]
+unsafe extern "C" {
+    fn LSRegisterURL(url: CFURLRef, update: bool) -> OSStatus;
+}
 
 impl InputMethod {
     pub fn input_source(&self) -> Result<TISInputSource, InputMethodError> {
@@ -471,8 +488,20 @@ impl Integration for InputMethod {
         {
             let destination = self.target_bundle_path()?;
 
-            // Attempt to emove existing symlink
-            fs::remove_file(&destination).await.ok();
+            // Preserve an already correct link; replacing it invalidates the
+            // file identity used by macOS input-source registration.
+            let linked = match fs::read_link(&destination).await {
+                Ok(current) if current == self.bundle_path => true,
+                Ok(_) => {
+                    fs::remove_file(&destination).await?;
+                    false
+                }
+                Err(error) if error.kind() == ErrorKind::NotFound => false,
+                Err(error) => {
+                    return Err(error)
+                        .with_context(|_| "The cursor-helper destination is not an owned symlink".to_owned());
+                }
+            };
 
             // Create the parent directory if it doesn't exist
             if let Some(parent) = destination.parent() {
@@ -482,9 +511,11 @@ impl Integration for InputMethod {
             }
 
             // Create new symlink
-            fs::symlink(&self.bundle_path, &destination)
-                .await
-                .with_context(|_| format!("Could not create symlink {}", destination.display()))?;
+            if !linked {
+                fs::symlink(&self.bundle_path, &destination)
+                    .await
+                    .with_context(|_| format!("Could not create symlink {}", destination.display()))?;
+            }
 
             // Register input source
             InputMethod::register(&destination)?;

@@ -36,7 +36,8 @@ pub async fn main() {
         let identifier = unsafe { bundle.bundleIdentifier() };
 
         info!("Attempting connection...");
-        imk::connect_imkserver(k_connection_name, identifier.as_deref());
+        let server = imk::connect_imkserver(k_connection_name, identifier.as_deref())
+            .expect("macOS could not create the cursor helper's input server");
         info!("Connected!");
 
         let app_id: &NSObject = app.as_ref();
@@ -44,5 +45,7 @@ pub async fn main() {
         info!("RUNNING {loaded_nib:?}!");
 
         unsafe { app.run() };
+        // IMKServer owns the service connection for the lifetime of the helper.
+        drop(server);
     });
 }

@@ -149,11 +149,14 @@ declare_class!(
     }
 );
 
-pub fn connect_imkserver(name: &NSString, identifier: Option<&NSString>) {
+pub fn connect_imkserver(name: &NSString, identifier: Option<&NSString>) -> Option<Retained<IMKServer>> {
     info!("connecting to imkserver");
     let server_alloc = IMKServer::alloc();
-    unsafe { IMKServer::initWithName_bundleIdentifier(server_alloc, Some(name), identifier) };
-    info!("connected to imkserver");
+    let server = unsafe { IMKServer::initWithName_bundleIdentifier(server_alloc, Some(name), identifier) };
+    if server.is_some() {
+        info!("connected to imkserver");
+    }
+    server
 }
 
 pub fn register_controller() {
