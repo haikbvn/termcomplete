@@ -1,10 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// Authentication mechanisms
 ///

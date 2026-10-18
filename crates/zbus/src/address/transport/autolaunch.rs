@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// Transport properties of an autolaunch D-Bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]

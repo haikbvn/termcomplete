@@ -3,7 +3,7 @@ mod cleanup;
 pub mod cli;
 mod event_handler;
 pub mod history;
-pub mod inline;
+
 pub mod input;
 pub mod interceptor;
 pub mod ipc;
@@ -11,131 +11,53 @@ pub mod logger;
 mod message;
 pub mod pty;
 pub mod term;
-pub mod update;
 
 use std::env;
 #[cfg(unix)]
-use std::ffi::{
-    CString,
-    OsStr,
-};
-use std::sync::{
-    LazyLock,
-    Mutex,
-    RwLock,
-};
-use std::time::{
-    Duration,
-    SystemTime,
-};
+use std::ffi::{CString, OsStr};
+use std::sync::{LazyLock, Mutex, RwLock};
+use std::time::{Duration, SystemTime};
 
 use alacritty_terminal::Term;
 use alacritty_terminal::ansi::Processor;
 use alacritty_terminal::event::EventListener;
 use alacritty_terminal::grid::Dimensions;
-use alacritty_terminal::term::{
-    ShellState,
-    SizeInfo,
-    TextBuffer,
-};
-use anyhow::{
-    Context as _,
-    Result,
-    anyhow,
-};
+use alacritty_terminal::term::{ShellState, SizeInfo, TextBuffer};
+use anyhow::{Context as _, Result, anyhow};
 use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
-use fig_log::{
-    LogArgs,
-    initialize_logging,
-};
-use fig_os_shim::{
-    Context,
-    Env,
-};
-use fig_proto::local::{
-    self,
-    EnvironmentVariable,
-    TerminalCursorCoordinates,
-};
+use fig_log::{LogArgs, initialize_logging};
+use fig_os_shim::{Context, Env};
+use fig_proto::local::{self, EnvironmentVariable, TerminalCursorCoordinates};
 use fig_proto::remote::Hostbound;
-use fig_proto::remote_hooks::{
-    hook_to_message,
-    new_edit_buffer_hook,
-};
+use fig_proto::remote_hooks::{hook_to_message, new_edit_buffer_hook};
 use fig_settings::state;
 use fig_util::consts::CLI_BINARY_NAME;
-use fig_util::env_var::{
-    Q_LOG_LEVEL,
-    Q_SHELL,
-    Q_TERM,
-    QTERM_SESSION_ID,
-};
-use fig_util::process_info::{
-    Pid,
-    PidExt,
-};
-use fig_util::{
-    PRODUCT_NAME,
-    PTY_BINARY_NAME,
-    Terminal as FigTerminal,
-    directories,
-};
-use flume::{
-    Receiver,
-    Sender,
-};
+use fig_util::env_var::{TCOMP_LOG_LEVEL, TCOMP_PTY_SESSION_ID, TCOMP_SHELL, TCOMP_TERM};
+use fig_util::process_info::{Pid, PidExt};
+use fig_util::{PRODUCT_NAME, PTY_BINARY_NAME, Terminal as FigTerminal, directories};
+use flume::{Receiver, Sender};
 #[cfg(unix)]
 use nix::unistd::execvp;
 use portable_pty::PtySize;
-use tokio::io::{
-    self,
-    AsyncWriteExt,
-};
+use tokio::io::{self, AsyncWriteExt};
 use tokio::sync::oneshot;
-use tokio::{
-    runtime,
-    select,
-};
-use tracing::{
-    debug,
-    error,
-    info,
-    trace,
-    warn,
-};
+use tokio::{runtime, select};
+use tracing::{debug, error, info, trace, warn};
 
 use crate::event_handler::EventHandler;
-use crate::input::{
-    InputEvent,
-    KeyCode,
-    KeyCodeEncodeModes,
-    KeyboardEncoding,
-    Modifiers,
-};
+use crate::input::{InputEvent, KeyCode, KeyCodeEncodeModes, KeyboardEncoding, Modifiers};
 use crate::interceptor::KeyInterceptor;
-use crate::ipc::{
-    spawn_figterm_ipc,
-    spawn_remote_ipc,
-};
-use crate::message::{
-    process_figterm_message,
-    process_remote_message,
-};
+use crate::ipc::{spawn_figterm_ipc, spawn_remote_ipc};
+use crate::message::{process_figterm_message, process_remote_message};
 #[cfg(unix)]
 use crate::pty::unix::open_pty;
 #[cfg(windows)]
 use crate::pty::win::open_pty;
-use crate::pty::{
-    AsyncMasterPtyExt,
-    CommandBuilder,
-};
-use crate::term::{
-    SystemTerminal,
-    Terminal,
-};
+use crate::pty::{AsyncMasterPtyExt, CommandBuilder};
+use crate::term::{SystemTerminal, Terminal};
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -335,7 +257,7 @@ where
             } else {
                 true
             }
-        },
+        }
         None => false,
     };
     drop(handle);
@@ -345,10 +267,10 @@ where
     shell_enabled && !insertion_locked && !preexec
 }
 
-const Q_DISABLE_AUTOCOMPLETE: &str = "Q_DISABLE_AUTOCOMPLETE";
+const TCOMP_DISABLE_AUTOCOMPLETE: &str = "TCOMP_DISABLE_AUTOCOMPLETE";
 
 fn autocomplete_enabled(env: &Env) -> bool {
-    env.get_os(Q_DISABLE_AUTOCOMPLETE).is_none_or(|s| s.is_empty())
+    env.get_os(TCOMP_DISABLE_AUTOCOMPLETE).is_none_or(|s| s.is_empty())
 }
 
 static AUTOCOMPLETE_ENABLED: LazyLock<bool> = LazyLock::new(|| autocomplete_enabled(&Env::new()));
@@ -383,19 +305,19 @@ where
                 sender.send_async(message).await?;
             }
             Ok(())
-        },
+        }
         None => Err(anyhow!("No edit buffer to send")),
     }
 }
 
 fn get_parent_shell() -> Result<String> {
-    match env::var(Q_SHELL).ok().filter(|s| !s.is_empty()) {
+    match env::var(TCOMP_SHELL).ok().filter(|s| !s.is_empty()) {
         Some(v) => Ok(v),
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
             Some(shell) => Ok(shell),
             None => {
-                anyhow::bail!("No Q_SHELL or SHELL found");
-            },
+                anyhow::bail!("No TCOMP_SHELL or SHELL found");
+            }
         },
     }
 }
@@ -410,38 +332,38 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
                 builder.arg(arg);
             }
             builder
-        },
+        }
         None => {
             let parent_shell = get_parent_shell()?;
             let mut builder = CommandBuilder::new(parent_shell);
 
-            if env::var("Q_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
+            if env::var("TCOMP_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
                 builder.arg("--login");
             }
 
-            if let Some(execution_string) = env::var("Q_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
+            if let Some(execution_string) = env::var("TCOMP_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
                 builder.args(["-c", &execution_string]);
             }
 
-            if let Some(extra_args) = env::var("Q_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
+            if let Some(extra_args) = env::var("TCOMP_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
                 builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
             }
 
             builder
-        },
+        }
     };
 
-    builder.env(Q_TERM, env!("CARGO_PKG_VERSION"));
+    builder.env(TCOMP_TERM, env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
-        builder.env("Q_TERM_TMUX", env!("CARGO_PKG_VERSION"));
+        builder.env("TCOMP_TERM_TMUX", env!("CARGO_PKG_VERSION"));
     }
 
     // Clean up environment and launch shell.
-    builder.env_remove(Q_SHELL);
-    builder.env_remove("Q_IS_LOGIN_SHELL");
-    builder.env_remove("Q_START_TEXT");
-    builder.env_remove("Q_SHELL_EXTRA_ARGS");
-    builder.env_remove("Q_EXECUTION_STRING");
+    builder.env_remove(TCOMP_SHELL);
+    builder.env_remove("TCOMP_IS_LOGIN_SHELL");
+    builder.env_remove("TCOMP_START_TEXT");
+    builder.env_remove("TCOMP_SHELL_EXTRA_ARGS");
+    builder.env_remove("TCOMP_EXECUTION_STRING");
 
     if let Ok(dir) = std::env::current_dir() {
         builder.cwd(dir);
@@ -466,7 +388,7 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
                 Some(value) => env::set_var(key, value),
                 None => {
                     env::remove_var(key);
-                },
+                }
             }
         }
     }
@@ -477,17 +399,16 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
 
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
-    fig_telemetry::init_global_telemetry_emitter();
 
     let context = Context::new();
 
-    let session_id = match std::env::var("MOCK_QTERM_SESSION_ID") {
+    let session_id = match std::env::var("MOCK_TCOMP_PTY_SESSION_ID") {
         Ok(id) => id,
         Err(_) => uuid::Uuid::new_v4().simple().to_string(),
     };
 
     unsafe {
-        std::env::set_var(QTERM_SESSION_ID, &session_id);
+        std::env::set_var(TCOMP_PTY_SESSION_ID, &session_id);
     }
 
     let parent_id = fig_os_shim::Env::new().q_parent().ok();
@@ -520,7 +441,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                 eprintln!("Fig failed to init logger: {err:?}");
             }
             None
-        },
+        }
     };
 
     logger::stdio_debug_log(format!("pty name: {pty_name}"));
@@ -554,7 +475,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .build()?;
 
     let runtime_result = runtime.block_on(async {
-        update::check_for_update(&context);
+
 
         terminal.set_raw_mode()?;
 
@@ -619,7 +540,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
-                let initial_command = env::var("Q_START_TEXT").ok().filter(|s| !s.is_empty());
+                let initial_command = env::var("TCOMP_START_TEXT").ok().filter(|s| !s.is_empty());
                 if let Some(mut initial_command) = initial_command {
                     debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
@@ -651,7 +572,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     }
 
                                     if execute {
-                                        master.write_all(b"\r").await?; 
+                                        master.write_all(b"\r").await?;
                                     }
 
                                     if unlock {
@@ -955,7 +876,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         };
 
         let _ = stop_ipc_tx.send(());
-        fig_telemetry::finish_telemetry().await;
+
 
         result
     });
@@ -977,7 +898,7 @@ fn main() {
     let cli = Cli::parse();
     let command = cli.command.as_deref();
 
-    logger::stdio_debug_log(format!("{Q_LOG_LEVEL}={}", fig_log::get_log_level()));
+    logger::stdio_debug_log(format!("{TCOMP_LOG_LEVEL}={}", fig_log::get_log_level()));
 
     if !state::get_bool_or("qterm.enabled", true) {
         println!("[NOTE] qterm is disabled. Autocomplete will not work.");
@@ -988,7 +909,7 @@ fn main() {
     match figterm_main(command) {
         Ok(()) => {
             info!("Exiting");
-        },
+        }
         Err(err) => {
             error!("Error in async runtime: {err}");
             println!("{PRODUCT_NAME} had an Error!: {err:?}");
@@ -1000,7 +921,7 @@ fn main() {
                 // capture_anyhow(&err);
                 logger::stdio_debug_log(err.to_string());
             }
-        },
+        }
     }
 }
 
@@ -1011,13 +932,16 @@ mod tests {
     #[test]
     fn autocomplete_enabled_test() {
         assert!(autocomplete_enabled(&Env::new_fake()));
-        assert!(autocomplete_enabled(&Env::from_slice(&[(Q_DISABLE_AUTOCOMPLETE, "")])));
+        assert!(autocomplete_enabled(&Env::from_slice(&[(
+            TCOMP_DISABLE_AUTOCOMPLETE,
+            ""
+        )])));
         assert!(!autocomplete_enabled(&Env::from_slice(&[(
-            Q_DISABLE_AUTOCOMPLETE,
+            TCOMP_DISABLE_AUTOCOMPLETE,
             "1"
         )])));
         assert!(!autocomplete_enabled(&Env::from_slice(&[(
-            Q_DISABLE_AUTOCOMPLETE,
+            TCOMP_DISABLE_AUTOCOMPLETE,
             "1"
         )])));
     }

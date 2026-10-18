@@ -2,30 +2,14 @@ use std::fmt::Display;
 
 use anstream::adapter::strip_str;
 use fig_integrations::Integration;
-use fig_integrations::desktop_entry::{
-    AutostartIntegration,
-    DesktopEntryIntegration,
-};
+use fig_integrations::desktop_entry::{AutostartIntegration, DesktopEntryIntegration};
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_os_shim::{
-    ContextArcProvider,
-    ContextProvider,
-    EnvProvider,
-};
-use fig_proto::fig::install_response::{
-    InstallationStatus,
-    Response,
-};
+use fig_os_shim::{ContextArcProvider, ContextProvider, EnvProvider};
+use fig_proto::fig::install_response::{InstallationStatus, Response};
 use fig_proto::fig::result::Result as ProtoResultEnum;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::fig::{
-    InstallAction,
-    InstallComponent,
-    InstallRequest,
-    InstallResponse,
-    Result as ProtoResult,
-};
+use fig_proto::fig::{InstallAction, InstallComponent, InstallRequest, InstallResponse, Result as ProtoResult};
 use fig_settings::settings::SettingsProvider;
 use fig_settings::state::StateProvider;
 use fig_util::Shell;
@@ -72,7 +56,7 @@ where
     let response = match (request.component(), request.action()) {
         (InstallComponent::Dotfiles, action) => {
             let mut errs: Vec<String> = vec![];
-            for shell in Shell::all() {
+            for shell in [Shell::Bash, Shell::Zsh] {
                 match shell.get_shell_integrations(ctx.env()) {
                     Ok(integrations) => {
                         for integration in integrations {
@@ -89,10 +73,10 @@ where
                                 ));
                             }
                         }
-                    },
+                    }
                     Err(err) => {
                         errs.push(format!("{shell}: {}", strip_str(&err.verbose_message().to_string())));
-                    },
+                    }
                 }
             }
 
@@ -112,7 +96,7 @@ where
                     )),
                 }),
             }
-        },
+        }
         (InstallComponent::Ssh, action) => match SshIntegration::new() {
             Ok(ssh_integration) => match action {
                 InstallAction::Install => integration_result(ssh_integration.install().await),
@@ -139,7 +123,7 @@ where
                     integration_result(Err("Accessibility permissions cannot be queried"))
                 }
             }
-        },
+        }
         (InstallComponent::Accessibility, InstallAction::Status) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -156,7 +140,7 @@ where
                     integration_result(Err("Accessibility permissions cannot be queried"))
                 }
             }
-        },
+        }
         (InstallComponent::Accessibility, InstallAction::Uninstall) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -165,7 +149,7 @@ where
                     integration_result(Err("Accessibility permissions cannot be queried"))
                 }
             }
-        },
+        }
         (InstallComponent::InputMethod, InstallAction::Install) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -182,7 +166,7 @@ where
                     integration_result(Err("Input method install is only supported on macOS"))
                 }
             }
-        },
+        }
         (InstallComponent::InputMethod, InstallAction::Uninstall) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -203,7 +187,7 @@ where
                     integration_result(Err("Input method uninstall is only supported on macOS"))
                 }
             }
-        },
+        }
         (InstallComponent::InputMethod, InstallAction::Status) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -216,7 +200,7 @@ where
                     integration_unsupported()
                 }
             }
-        },
+        }
         (InstallComponent::DesktopEntry, action) => {
             if !ctx.env().in_appimage() {
                 integration_result(Err(
@@ -243,18 +227,18 @@ where
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
                         integration_result(desktop_integration.install().await)
-                    },
+                    }
                     InstallAction::Uninstall => {
                         ctx.state()
                             .set_value("appimage.manageDesktopEntry", false)
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
                         integration_result(desktop_integration.uninstall().await)
-                    },
+                    }
                     InstallAction::Status => integration_status(desktop_integration).await,
                 }
             }
-        },
+        }
         (InstallComponent::AutostartEntry, action) => {
             let ctx = ctx.context();
             let integration = AutostartIntegration::new(&ctx).map_err(super::Error::from_std)?;
@@ -263,7 +247,7 @@ where
                 InstallAction::Uninstall => integration_result(integration.uninstall().await),
                 InstallAction::Status => integration_status(integration).await,
             }
-        },
+        }
         #[allow(unused_variables)]
         (InstallComponent::GnomeExtension, action) => {
             cfg_if::cfg_if! {
@@ -276,7 +260,7 @@ where
                     integration_result(Err("Not supported on platforms other than Linux."))
                 }
             }
-        },
+        }
     };
 
     RequestResult::Ok(Box::new(response))
@@ -293,10 +277,7 @@ where
     ExtensionsCtx: ContextProvider + Send + Sync,
 {
     use fig_integrations::gnome_extension::GnomeExtensionIntegration;
-    use fig_util::directories::{
-        bundled_gnome_extension_version_path,
-        bundled_gnome_extension_zip_path,
-    };
+    use fig_util::directories::{bundled_gnome_extension_version_path, bundled_gnome_extension_zip_path};
 
     let extension_uuid = shell_extensions.extension_uuid().await?;
     let bundled_version: u32 = ctx
@@ -329,19 +310,10 @@ mod tests {
     use std::sync::Arc;
 
     use fig_integrations::desktop_entry::global_entry_path;
-    use fig_os_shim::{
-        Context,
-        ContextProvider,
-    };
+    use fig_os_shim::{Context, ContextProvider};
     use fig_proto::fig::server_originated_message::Submessage;
-    use fig_settings::{
-        Settings,
-        State,
-    };
-    use fig_util::directories::{
-        appimage_desktop_entry_icon_path,
-        appimage_desktop_entry_path,
-    };
+    use fig_settings::{Settings, State};
+    use fig_util::directories::{appimage_desktop_entry_icon_path, appimage_desktop_entry_path};
 
     use super::*;
 
@@ -483,10 +455,7 @@ mod tests {
     /// [bundled_extension_version_path].
     #[cfg(target_os = "linux")]
     async fn write_extension_bundle(ctx: &Context, uuid: &str, version: u32) {
-        use fig_util::directories::{
-            bundled_gnome_extension_version_path,
-            bundled_gnome_extension_zip_path,
-        };
+        use fig_util::directories::{bundled_gnome_extension_version_path, bundled_gnome_extension_zip_path};
 
         let zip_path = bundled_gnome_extension_zip_path(ctx, uuid).unwrap();
         let version_path = bundled_gnome_extension_version_path(ctx, uuid).unwrap();
@@ -498,10 +467,7 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[tokio::test]
     async fn test_gnome_extension_installation_and_uninstallation() {
-        use dbus::gnome_shell::{
-            GNOME_SHELL_PROCESS_NAME,
-            ShellExtensions,
-        };
+        use dbus::gnome_shell::{GNOME_SHELL_PROCESS_NAME, ShellExtensions};
         use fig_os_shim::Os;
 
         let ctx = Context::builder()

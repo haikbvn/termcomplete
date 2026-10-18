@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// A VSOCK D-Bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]

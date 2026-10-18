@@ -4,15 +4,9 @@ use std::sync::OnceLock;
 
 use fig_os_shim::EnvProvider;
 use regex::Regex;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
-use crate::{
-    Error,
-    UnknownDesktopErrContext,
-};
+use crate::{Error, UnknownDesktopErrContext};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DisplayServer {
@@ -56,7 +50,7 @@ pub fn get_desktop_environment(env: &impl EnvProvider) -> Result<DesktopEnvironm
                 "sway" => return Ok(DesktopEnvironment::Sway),
                 _ => current,
             }
-        },
+        }
         _ => "".into(),
     };
 
@@ -68,7 +62,7 @@ pub fn get_desktop_environment(env: &impl EnvProvider) -> Result<DesktopEnvironm
                 "kde" => return Ok(DesktopEnvironment::Plasma),
                 _ => session,
             }
-        },
+        }
         _ => "".into(),
     };
 
@@ -139,7 +133,7 @@ impl OsRelease {
                     "BUILD_ID" => os_release.build_id = strip_quotes(value),
                     "VARIANT" => os_release.variant = strip_quotes(value),
                     "VARIANT_ID" => os_release.variant_id = strip_quotes(value),
-                    _ => {},
+                    _ => {}
                 }
             }
         }

@@ -7,33 +7,12 @@ use std::collections::HashMap;
 use enumflags2::BitFlags;
 use static_assertions::assert_impl_all;
 use zbus_names::{
-    BusName,
-    InterfaceName,
-    OwnedBusName,
-    OwnedInterfaceName,
-    OwnedUniqueName,
-    UniqueName,
-    WellKnownName,
+    BusName, InterfaceName, OwnedBusName, OwnedInterfaceName, OwnedUniqueName, UniqueName, WellKnownName,
 };
-use zvariant::{
-    ObjectPath,
-    Optional,
-    OwnedValue,
-    Value,
-};
+use zvariant::{ObjectPath, Optional, OwnedValue, Value};
 
-use crate::fdo::{
-    ConnectionCredentials,
-    ManagedObjects,
-    ReleaseNameReply,
-    RequestNameFlags,
-    RequestNameReply,
-    Result,
-};
-use crate::{
-    OwnedGuid,
-    proxy,
-};
+use crate::fdo::{ConnectionCredentials, ManagedObjects, ReleaseNameReply, RequestNameFlags, RequestNameReply, Result};
+use crate::{OwnedGuid, proxy};
 
 gen_introspectable_proxy!(false, true);
 assert_impl_all!(IntrospectableProxy<'_>: Send, Sync, Unpin);

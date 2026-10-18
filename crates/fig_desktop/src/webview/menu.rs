@@ -1,20 +1,10 @@
 #[allow(unused_imports)]
 use fig_util::consts::PRODUCT_NAME;
 #[allow(unused_imports)]
-use muda::{
-    Menu,
-    MenuEvent,
-    Submenu,
-};
+use muda::{Menu, MenuEvent, Submenu};
 
-use crate::event::{
-    Event,
-    WindowEvent,
-};
-use crate::{
-    DASHBOARD_ID,
-    EventLoopProxy,
-};
+use crate::event::{Event, WindowEvent};
+use crate::{DASHBOARD_ID, EventLoopProxy};
 
 const DASHBOARD_QUIT: &str = "dashboard-quit";
 const DASHBOARD_RELOAD: &str = "dashboard-reload";
@@ -23,11 +13,7 @@ const DASHBOARD_FORWARD: &str = "dashboard-forward";
 
 #[cfg(target_os = "macos")]
 pub fn menu_bar() -> Menu {
-    use muda::{
-        MenuItemBuilder,
-        PredefinedMenuItem,
-        Submenu,
-    };
+    use muda::{MenuItemBuilder, PredefinedMenuItem, Submenu};
 
     let menu_bar = Menu::new();
 

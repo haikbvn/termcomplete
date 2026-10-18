@@ -4,47 +4,28 @@ pub mod channel;
 pub use channel::Channel;
 
 mod split;
-pub use split::{
-    BoxedSplit,
-    Split,
-};
+pub use split::{BoxedSplit, Split};
 
 mod tcp;
 mod unix;
 mod vsock;
 
 #[cfg(unix)]
-use std::os::fd::{
-    AsFd,
-    BorrowedFd,
-    OwnedFd,
-};
+use std::os::fd::{AsFd, BorrowedFd, OwnedFd};
 #[cfg(not(feature = "tokio"))]
 use std::sync::Arc;
-use std::{
-    io,
-    mem,
-};
+use std::{io, mem};
 
 #[cfg(not(feature = "tokio"))]
 use async_io::Async;
 use tracing::trace;
 use zvariant::Endian;
-use zvariant::serialized::{
-    self,
-    Context,
-};
+use zvariant::serialized::{self, Context};
 
 use crate::fdo::ConnectionCredentials;
 use crate::message::PrimaryHeader;
-use crate::message::header::{
-    MAX_MESSAGE_SIZE,
-    MIN_MESSAGE_SIZE,
-};
-use crate::{
-    Message,
-    padding_for_8_bytes,
-};
+use crate::message::header::{MAX_MESSAGE_SIZE, MIN_MESSAGE_SIZE};
+use crate::{Message, padding_for_8_bytes};
 
 #[cfg(unix)]
 type RecvmsgResult = io::Result<(usize, Vec<OwnedFd>)>;

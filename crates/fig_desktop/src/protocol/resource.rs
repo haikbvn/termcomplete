@@ -6,17 +6,9 @@ use std::sync::Arc;
 use fig_os_shim::Context;
 use tracing::info;
 use wry::http::header::CONTENT_TYPE;
-use wry::http::{
-    Request,
-    Response,
-    StatusCode,
-};
+use wry::http::{Request, Response, StatusCode};
 
-use super::util::{
-    res_400,
-    res_404,
-    res_500,
-};
+use super::util::{res_400, res_404, res_500};
 use crate::webview::WindowId;
 
 fn relativize(path: &Path) -> &Path {
@@ -65,7 +57,7 @@ pub async fn handle<S: Scope>(
             } else {
                 return res_404();
             }
-        },
+        }
         Err(err) => return res_500(err),
     };
 
@@ -79,14 +71,14 @@ pub async fn handle<S: Scope>(
             if metadata.is_dir() {
                 path.push("index.html");
             }
-        },
+        }
         Err(err) if err.kind() == ErrorKind::NotFound => {
             if uri_path.extension().is_none() {
                 path = resources_path.join("index.html");
             } else {
                 return res_404();
             }
-        },
+        }
         Err(err) => return res_500(err),
     };
 

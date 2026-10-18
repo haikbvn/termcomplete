@@ -1,8 +1,4 @@
-use super::{
-    ReadHalf,
-    Socket,
-    WriteHalf,
-};
+use super::{ReadHalf, Socket, WriteHalf};
 
 /// A pair of socket read and write halves.
 #[derive(Debug)]

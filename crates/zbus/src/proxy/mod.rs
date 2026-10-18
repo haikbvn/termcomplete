@@ -1,97 +1,30 @@
 //! The client-side proxy API.
 
-use std::collections::{
-    HashMap,
-    HashSet,
-};
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::future::Future;
 use std::ops::Deref;
 use std::pin::Pin;
-use std::sync::{
-    Arc,
-    OnceLock,
-    RwLock,
-    RwLockReadGuard,
-};
-use std::task::{
-    Context,
-    Poll,
-};
+use std::sync::{Arc, OnceLock, RwLock, RwLockReadGuard};
+use std::task::{Context, Poll};
 
-use enumflags2::{
-    BitFlags,
-    bitflags,
-};
-use event_listener::{
-    Event,
-    EventListener,
-};
-use futures_core::{
-    ready,
-    stream,
-};
+use enumflags2::{BitFlags, bitflags};
+use event_listener::{Event, EventListener};
+use futures_core::{ready, stream};
 use futures_util::future::Either;
 use futures_util::stream::Map;
-use ordered_stream::{
-    FromFuture,
-    Join,
-    OrderedStream,
-    PollResult,
-    join as join_streams,
-};
+use ordered_stream::{FromFuture, Join, OrderedStream, PollResult, join as join_streams};
 use static_assertions::assert_impl_all;
-use tracing::{
-    Instrument,
-    debug,
-    info_span,
-    instrument,
-    trace,
-};
-use zbus_names::{
-    BusName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
-use zvariant::{
-    ObjectPath,
-    OwnedValue,
-    Str,
-    Value,
-};
+use tracing::{Instrument, debug, info_span, instrument, trace};
+use zbus_names::{BusName, InterfaceName, MemberName, UniqueName};
+use zvariant::{ObjectPath, OwnedValue, Str, Value};
 
-use crate::fdo::{
-    self,
-    IntrospectableProxy,
-    NameOwnerChanged,
-    PropertiesChangedStream,
-    PropertiesProxy,
-};
-use crate::message::{
-    Flags,
-    Message,
-    Sequence,
-    Type,
-};
-use crate::{
-    AsyncDrop,
-    Connection,
-    Error,
-    Executor,
-    MatchRule,
-    MessageStream,
-    OwnedMatchRule,
-    Result,
-    Task,
-};
+use crate::fdo::{self, IntrospectableProxy, NameOwnerChanged, PropertiesChangedStream, PropertiesProxy};
+use crate::message::{Flags, Message, Sequence, Type};
+use crate::{AsyncDrop, Connection, Error, Executor, MatchRule, MessageStream, OwnedMatchRule, Result, Task};
 
 mod builder;
-pub use builder::{
-    Builder,
-    CacheProperties,
-    ProxyDefault,
-};
+pub use builder::{Builder, CacheProperties, ProxyDefault};
 
 /// A client-side interface proxy.
 ///
@@ -1060,7 +993,7 @@ pub enum MethodFlags {
     /// Errors encountered while *making* the call will still be returned as
     /// an `Err` variant, but any errors that are triggered by the receiver's
     /// handling of the call will not be delivered.
-    NoReplyExpected      = 0x1,
+    NoReplyExpected = 0x1,
 
     /// When set on a call whose destination is a message bus, this flag will instruct
     /// the bus not to [launch][al] a service to handle the call if no application
@@ -1069,7 +1002,7 @@ pub enum MethodFlags {
     /// This flag is ignored when using a peer-to-peer connection.
     ///
     /// [al]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-starting-services
-    NoAutoStart          = 0x2,
+    NoAutoStart = 0x2,
 
     /// Indicates to the receiver that this client is prepared to wait for interactive
     /// authorization, which might take a considerable time to complete. For example, the receiver
@@ -1368,11 +1301,7 @@ mod tests {
     use super::*;
     use crate::object_server::SignalContext;
     use crate::utils::block_on;
-    use crate::{
-        connection,
-        interface,
-        proxy,
-    };
+    use crate::{connection, interface, proxy};
 
     #[ignore = "fails in ci"]
     #[test]

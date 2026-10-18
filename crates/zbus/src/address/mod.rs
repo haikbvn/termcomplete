@@ -13,10 +13,7 @@ pub mod transport;
 
 use std::collections::HashMap;
 use std::env;
-use std::fmt::{
-    Display,
-    Formatter,
-};
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -24,12 +21,7 @@ use nix::unistd::Uid;
 
 use self::transport::Stream;
 pub use self::transport::Transport;
-use crate::{
-    Error,
-    Guid,
-    OwnedGuid,
-    Result,
-};
+use crate::{Error, Guid, OwnedGuid, Result};
 
 /// A bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -182,23 +174,13 @@ mod tests {
     use test_log::test;
 
     use super::Address;
-    use super::transport::{
-        Tcp,
-        TcpTransportFamily,
-        Transport,
-    };
+    use super::transport::{Tcp, TcpTransportFamily, Transport};
     use crate::Error;
     #[cfg(target_os = "macos")]
     use crate::address::transport::Launchd;
     #[cfg(windows)]
-    use crate::address::transport::{
-        Autolaunch,
-        AutolaunchScope,
-    };
-    use crate::address::transport::{
-        Unix,
-        UnixSocket,
-    };
+    use crate::address::transport::{Autolaunch, AutolaunchScope};
+    use crate::address::transport::{Unix, UnixSocket};
 
     #[test]
     fn parse_dbus_addresses() {

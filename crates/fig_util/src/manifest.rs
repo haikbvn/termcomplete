@@ -3,20 +3,9 @@ use std::str::FromStr;
 use std::sync::OnceLock;
 
 use cfg_if::cfg_if;
-use fig_os_shim::{
-    EnvProvider,
-    FsProvider,
-    PlatformProvider,
-};
-use serde::{
-    Deserialize,
-    Deserializer,
-    Serialize,
-};
-use strum::{
-    Display,
-    EnumString,
-};
+use fig_os_shim::{EnvProvider, FsProvider, PlatformProvider};
+use serde::{Deserialize, Deserializer, Serialize};
+use strum::{Display, EnumString};
 use tracing::debug;
 
 use crate::Error;
@@ -260,7 +249,7 @@ pub async fn bundle_metadata_json<Ctx: FsProvider + EnvProvider + PlatformProvid
             let metadata_path = bundle_metadata_path(ctx)?;
             debug!("Reading metadata at path: {:?}", &metadata_path);
             Ok(Some(ctx.fs().read_to_string(bundle_metadata_path(ctx)?).await?))
-        },
+        }
         _ => Ok(None),
     }
 }
@@ -313,10 +302,7 @@ pub fn version() -> Option<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::{
-        from_str,
-        to_string,
-    };
+    use serde_json::{from_str, to_string};
 
     use super::*;
 

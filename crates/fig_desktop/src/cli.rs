@@ -1,11 +1,14 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(name = "tcomp-desktop", version, about = "Termcomplete desktop application")]
 pub struct Cli {
     /// Do not launch the dashboard when starting
     #[arg(long)]
     pub no_dashboard: bool,
+    /// Run without preparing helper links (for isolated diagnostics).
+    #[arg(long)]
+    pub no_install: bool,
     /// Checks the `app.launchOnStartup` setting before launching
     #[arg(long)]
     pub is_startup: bool,

@@ -3,17 +3,9 @@
 use static_assertions::assert_impl_all;
 use zvariant::ObjectPath;
 
-use crate::object_server::{
-    Interface,
-    InterfaceDeref,
-    InterfaceDerefMut,
-    SignalContext,
-};
+use crate::object_server::{Interface, InterfaceDeref, InterfaceDerefMut, SignalContext};
 use crate::utils::block_on;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// Wrapper over an interface, along with its corresponding `SignalContext`
 /// instance. A reference to the underlying interface may be obtained via

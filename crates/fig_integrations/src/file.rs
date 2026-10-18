@@ -2,19 +2,12 @@ use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use tokio::fs::{
-    self,
-    File,
-};
+use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use tracing::debug;
 
 use crate::Integration;
-use crate::error::{
-    Error,
-    ErrorExt,
-    Result,
-};
+use crate::error::{Error, ErrorExt, Result};
 
 #[derive(Debug, Clone)]
 pub struct FileIntegration {
@@ -34,10 +27,7 @@ impl Integration for FileIntegration {
         // Check for parent folder permissions issues
         #[cfg(unix)]
         {
-            use nix::unistd::{
-                AccessFlags,
-                access,
-            };
+            use nix::unistd::{AccessFlags, access};
 
             let mut path = self.path.as_path();
             let mut res = Ok(());
@@ -46,14 +36,14 @@ impl Integration for FileIntegration {
                     match access(parent, AccessFlags::R_OK | AccessFlags::W_OK | AccessFlags::X_OK) {
                         Ok(_) => {
                             break;
-                        },
+                        }
                         Err(err) => {
                             res = Err(Error::PermissionDenied {
                                 path: parent.into(),
                                 inner: err.into(),
                             });
                             path = parent;
-                        },
+                        }
                     }
                 }
             }
@@ -64,7 +54,7 @@ impl Integration for FileIntegration {
             Ok(contents) => contents,
             Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => {
                 return Err(Error::FileDoesNotExist(self.path.clone().into()));
-            },
+            }
             Err(err) => return Err(err),
         };
         if current_contents.ne(&self.contents) {

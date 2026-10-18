@@ -1,14 +1,7 @@
 use std::collections::HashMap;
-use std::fmt::{
-    Display,
-    Formatter,
-};
+use std::fmt::{Display, Formatter};
 #[cfg(not(feature = "tokio"))]
-use std::net::{
-    SocketAddr,
-    TcpStream,
-    ToSocketAddrs,
-};
+use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::str::FromStr;
 
 #[cfg(not(feature = "tokio"))]
@@ -17,10 +10,7 @@ use async_io::Async;
 use tokio::net::TcpStream;
 
 use super::encode_percents;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// A TCP transport in a D-Bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]

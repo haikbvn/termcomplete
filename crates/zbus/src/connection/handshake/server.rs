@@ -1,29 +1,12 @@
 use std::collections::VecDeque;
 
 use async_trait::async_trait;
-use sha1::{
-    Digest,
-    Sha1,
-};
-use tracing::{
-    instrument,
-    trace,
-};
+use sha1::{Digest, Sha1};
+use tracing::{instrument, trace};
 
 use super::{
-    AuthMechanism,
-    Authenticated,
-    BoxedSplit,
-    Command,
-    Common,
-    Cookie,
-    CookieContext,
-    Error,
-    Handshake,
-    OwnedGuid,
-    Result,
-    random_ascii,
-    sasl_auth_id,
+    AuthMechanism, Authenticated, BoxedSplit, Command, Common, Cookie, CookieContext, Error, Handshake, OwnedGuid,
+    Result, random_ascii, sasl_auth_id,
 };
 use crate::names::OwnedUniqueName;
 

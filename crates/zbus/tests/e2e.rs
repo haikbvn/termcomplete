@@ -4,58 +4,22 @@ use std::collections::HashMap;
 use std::os::unix::net::UnixStream;
 
 use event_listener::Event;
-use futures_util::{
-    StreamExt,
-    TryStreamExt,
-};
+use futures_util::{StreamExt, TryStreamExt};
 use ntest::timeout;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 use test_log::test;
 #[cfg(all(unix, feature = "tokio", feature = "p2p"))]
 use tokio::net::UnixStream;
-use tokio::sync::mpsc::{
-    Sender,
-    channel,
-};
-use tracing::{
-    debug,
-    instrument,
-};
-use zbus::fdo::{
-    ObjectManager,
-    ObjectManagerProxy,
-};
+use tokio::sync::mpsc::{Sender, channel};
+use tracing::{debug, instrument};
+use zbus::fdo::{ObjectManager, ObjectManagerProxy};
 use zbus::message::Header;
-use zbus::object_server::{
-    InterfaceRef,
-    ResponseDispatchNotifier,
-    SignalContext,
-};
+use zbus::object_server::{InterfaceRef, ResponseDispatchNotifier, SignalContext};
 use zbus::proxy::CacheProperties;
 use zbus::{
-    Connection,
-    DBusError,
-    Error,
-    Message,
-    MessageStream,
-    ObjectServer,
-    block_on,
-    connection,
-    interface,
-    message,
+    Connection, DBusError, Error, Message, MessageStream, ObjectServer, block_on, connection, interface, message,
 };
-use zvariant::{
-    DeserializeDict,
-    Optional,
-    OwnedValue,
-    SerializeDict,
-    Str,
-    Type,
-    Value,
-};
+use zvariant::{DeserializeDict, Optional, OwnedValue, SerializeDict, Str, Type, Value};
 
 #[derive(Debug, Deserialize, Serialize, Type)]
 pub struct ArgStructTest {
@@ -459,10 +423,13 @@ fn check_hash_map(map: HashMap<String, String>) {
 }
 
 fn check_ipv4_address(address: IP4Adress) {
-    assert_eq!(address, IP4Adress {
-        address: "127.0.0.1".to_string(),
-        prefix: 1234,
-    });
+    assert_eq!(
+        address,
+        IP4Adress {
+            address: "127.0.0.1".to_string(),
+            prefix: 1234,
+        }
+    );
 }
 
 fn check_ipv4_address_hashmap(address: HashMap<String, OwnedValue>) {
@@ -772,9 +739,10 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     let changed = props_changed.next().await.unwrap();
     let unexpected_property_key = "EmitsChangedConst";
     let args = changed.args()?;
-    assert_ne!(args.invalidated_properties(), &vec![
-        unexpected_property_key.to_string()
-    ]);
+    assert_ne!(
+        args.invalidated_properties(),
+        &vec![unexpected_property_key.to_string()]
+    );
     assert!(!args.changed_properties().is_empty());
     assert!(args.invalidated_properties().is_empty());
 
@@ -783,9 +751,10 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     let changed = props_changed.next().await.unwrap();
     let unexpected_property_key = "EmitsChangedFalse";
     let args = changed.args()?;
-    assert_ne!(args.invalidated_properties(), &vec![
-        unexpected_property_key.to_string()
-    ]);
+    assert_ne!(
+        args.invalidated_properties(),
+        &vec![unexpected_property_key.to_string()]
+    );
     assert!(!args.changed_properties().is_empty());
     assert!(args.invalidated_properties().is_empty());
 

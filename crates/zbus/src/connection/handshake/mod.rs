@@ -23,18 +23,10 @@ use server::Server;
 use zbus_names::OwnedUniqueName;
 use zvariant::Str;
 
-use super::socket::{
-    BoxedSplit,
-    ReadHalf,
-    WriteHalf,
-};
+use super::socket::{BoxedSplit, ReadHalf, WriteHalf};
 #[cfg(windows)]
 use crate::win32;
-use crate::{
-    Error,
-    OwnedGuid,
-    Result,
-};
+use crate::{Error, OwnedGuid, Result};
 
 /// The result of a finalized handshake
 ///
@@ -113,10 +105,7 @@ fn random_ascii(len: usize) -> String {
     use std::iter;
 
     use rand::distributions::Alphanumeric;
-    use rand::{
-        Rng,
-        thread_rng,
-    };
+    use rand::{Rng, thread_rng};
 
     let mut rng = thread_rng();
     iter::repeat(())
@@ -151,26 +140,17 @@ mod tests {
 
     use futures_util::future::join;
     #[cfg(not(feature = "tokio"))]
-    use futures_util::io::{
-        AsyncWrite,
-        AsyncWriteExt,
-    };
+    use futures_util::io::{AsyncWrite, AsyncWriteExt};
     use ntest::timeout;
     use test_log::test;
     #[cfg(feature = "tokio")]
     use tokio::{
-        io::{
-            AsyncWrite,
-            AsyncWriteExt,
-        },
+        io::{AsyncWrite, AsyncWriteExt},
         net::UnixStream,
     };
 
     use super::*;
-    use crate::{
-        Guid,
-        Socket,
-    };
+    use crate::{Guid, Socket};
 
     fn create_async_socket_pair() -> (impl AsyncWrite + Socket, impl AsyncWrite + Socket) {
         // Tokio needs us to call the sync function from async context. :shrug:

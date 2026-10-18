@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 
-use super::{
-    Transport,
-    Unix,
-    UnixSocket,
-};
+use super::{Transport, Unix, UnixSocket};
 use crate::Result;
 use crate::process::run;
 

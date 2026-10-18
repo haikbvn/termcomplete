@@ -3,17 +3,10 @@ use std::sync::LazyLock;
 use anyhow::Result;
 use dashmap::DashMap;
 use fig_proto::figterm::Action;
-use fig_settings::keybindings::{
-    KeyBinding,
-    KeyBindings,
-};
+use fig_settings::keybindings::{KeyBinding, KeyBindings};
 use tracing::trace;
 
-use crate::input::{
-    KeyCode,
-    KeyEvent,
-    Modifiers,
-};
+use crate::input::{KeyCode, KeyEvent, Modifiers};
 
 // TODO: remove hardcoded list of global actions and use `availability`
 const GLOBAL_ACTIONS: &[&str] = &["toggleAutocomplete", "showAutocomplete"];
@@ -32,7 +25,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
         match remaining.split_once('+') {
             Some(("", "")) | None => {
                 break remaining;
-            },
+            }
             Some((modifier_txt, key)) => {
                 modifiers |= match modifier_txt {
                     "ctrl" | "control" => Modifiers::CTRL,
@@ -42,7 +35,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
                     _ => Modifiers::NONE,
                 };
                 remaining = key;
-            },
+            }
         }
     };
 
@@ -66,7 +59,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
             let f_key = f_key.trim_start_matches('f');
             let f_key = f_key.parse::<u8>().ok()?;
             KeyCode::Function(f_key)
-        },
+        }
         c => {
             let mut chars = c.chars();
             let mut first_char = chars.next()?;
@@ -80,7 +73,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
                 return None;
             }
             KeyCode::Char(first_char)
-        },
+        }
     };
 
     Some(KeyEvent { key, modifiers })
@@ -205,11 +198,11 @@ impl KeyInterceptor {
                         Some(action) if action.value() == IGNORE_ACTION => None,
                         Some(action) if GLOBAL_ACTIONS.contains(&action.value().as_str()) => {
                             Some(action.value().clone())
-                        },
+                        }
                         _ => None,
                     }
                 }
-            },
+            }
             (_, true) => {
                 if self.window_visible {
                     match self.mappings.get(key_event) {
@@ -220,7 +213,7 @@ impl KeyInterceptor {
                 } else {
                     None
                 }
-            },
+            }
             _ => None,
         }
     }

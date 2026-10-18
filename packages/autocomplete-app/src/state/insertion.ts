@@ -12,7 +12,6 @@ import {
   ensureTrailingSlash,
 } from "@aws/amazon-q-developer-cli-shared/utils";
 import { SETTINGS } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
-import { trackEvent } from "../telemetry";
 import { NamedSetState, AutocompleteState, Visibility } from "./types";
 import {
   isMatchingType,
@@ -132,17 +131,6 @@ const insertString = (
       }
     : null;
 
-  trackEvent("autocomplete-insert", {
-    ...metadata,
-    rootCommand,
-    suggestion_type: item.type ?? null,
-    insertionLength: `${inserted.insertedChars}`,
-    // Includes backspaces and cursor adjustments.
-    insertionLengthFull: `${inserted.insertedCharsFull}`,
-    app: fig.constants?.version || "",
-    terminal: state.figState.shellContext?.terminal ?? null,
-    shell: state.figState.shellContext?.shellPath?.split("/")?.at(-1) ?? null,
-  });
 
   logger.info("Inserted string, updating visibility");
   updateVisibilityPostInsert(item, isFullCompletion);

@@ -14,10 +14,7 @@ pub mod vscode;
 
 use async_trait::async_trait;
 pub use backup::backup_file;
-pub use error::{
-    Error,
-    Result,
-};
+pub use error::{Error, Result};
 pub use file::FileIntegration;
 
 #[async_trait]

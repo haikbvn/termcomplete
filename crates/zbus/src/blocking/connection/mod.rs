@@ -6,29 +6,14 @@ use std::ops::Deref;
 use enumflags2::BitFlags;
 use event_listener::EventListener;
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    BusName,
-    ErrorName,
-    InterfaceName,
-    MemberName,
-    OwnedUniqueName,
-    WellKnownName,
-};
+use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, OwnedUniqueName, WellKnownName};
 use zvariant::ObjectPath;
 
 use crate::blocking::ObjectServer;
-use crate::fdo::{
-    ConnectionCredentials,
-    RequestNameFlags,
-    RequestNameReply,
-};
+use crate::fdo::{ConnectionCredentials, RequestNameFlags, RequestNameReply};
 use crate::message::Message;
 use crate::utils::block_on;
-use crate::{
-    DBusError,
-    Error,
-    Result,
-};
+use crate::{DBusError, Error, Result};
 
 mod builder;
 pub use builder::Builder;

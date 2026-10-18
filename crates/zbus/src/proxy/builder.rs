@@ -3,22 +3,11 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    BusName,
-    InterfaceName,
-};
-use zvariant::{
-    ObjectPath,
-    Str,
-};
+use zbus_names::{BusName, InterfaceName};
+use zvariant::{ObjectPath, Str};
 
 use crate::proxy::ProxyInner;
-use crate::{
-    Connection,
-    Error,
-    Proxy,
-    Result,
-};
+use crate::{Connection, Error, Proxy, Result};
 
 /// The properties caching mode.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]

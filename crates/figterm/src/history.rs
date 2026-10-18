@@ -1,14 +1,6 @@
-use fig_settings::history::{
-    HistoryColumn,
-    Order,
-    OrderBy,
-    WhereExpression,
-};
+use fig_settings::history::{HistoryColumn, Order, OrderBy, WhereExpression};
 use flume::Sender;
-use tracing::{
-    error,
-    trace,
-};
+use tracing::{error, trace};
 
 use crate::HOSTNAME;
 
@@ -56,7 +48,7 @@ pub async fn spawn_history_task() -> HistorySender {
                     if let Err(err) = history.insert_command_history(&command_info, true) {
                         error!(%err, "Failed to insert command into history");
                     }
-                },
+                }
                 HistoryCommand::Query(query, sender) => {
                     match history.rows(
                         Some(WhereExpression::NotNull(HistoryColumn::ExitCode)),
@@ -68,15 +60,15 @@ pub async fn spawn_history_task() -> HistorySender {
                             if let Err(err) = sender.send(Some(rows)) {
                                 error!(%err, "Failed to send history query result");
                             }
-                        },
+                        }
                         Err(err) => {
                             error!(%err, "Failed to query history");
                             if let Err(err) = sender.send(None) {
                                 error!(%err, "Failed to send history query result");
                             }
-                        },
+                        }
                     }
-                },
+                }
             }
         }
     });

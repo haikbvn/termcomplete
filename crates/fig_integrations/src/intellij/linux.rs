@@ -8,10 +8,7 @@ use serde::Deserialize;
 use tracing::debug;
 
 use crate::error::Result;
-use crate::{
-    Error,
-    Integration,
-};
+use crate::{Error, Integration};
 
 const PLUGIN_SLUG: &str = "jetbrains-extension";
 const PLUGIN_JAR: &str = "jetbrains-extension-2.0.0.jar";

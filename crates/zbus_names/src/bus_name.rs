@@ -1,37 +1,15 @@
 use core::borrow::Borrow;
-use core::fmt::{
-    self,
-    Debug,
-    Display,
-    Formatter,
-};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::Deref;
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use serde::{
-    Deserialize,
-    Serialize,
-    de,
-};
+use serde::{Deserialize, Serialize, de};
 use static_assertions::assert_impl_all;
-use zvariant::{
-    NoneValue,
-    OwnedValue,
-    Str,
-    Type,
-    Value,
-};
+use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 
 use crate::utils::impl_str_basic;
-use crate::{
-    Error,
-    OwnedUniqueName,
-    OwnedWellKnownName,
-    Result,
-    UniqueName,
-    WellKnownName,
-};
+use crate::{Error, OwnedUniqueName, OwnedWellKnownName, Result, UniqueName, WellKnownName};
 
 /// String that identifies a [bus name].
 ///

@@ -1,61 +1,23 @@
-use std::ffi::{
-    CStr,
-    OsStr,
-};
-use std::io::{
-    Error,
-    ErrorKind,
-};
+use std::ffi::{CStr, OsStr};
+use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
-use std::os::windows::io::{
-    AsRawHandle,
-    FromRawHandle,
-    OwnedHandle,
-    RawHandle,
-};
+use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle};
 use std::os::windows::prelude::OsStrExt;
 use std::ptr;
 
 #[cfg(not(feature = "tokio"))]
 use uds_windows::UnixStream;
 use windows_sys::Win32::Foundation::{
-    ERROR_INSUFFICIENT_BUFFER,
-    FALSE,
-    HANDLE,
-    LocalFree,
-    NO_ERROR,
-    WAIT_ABANDONED,
-    WAIT_OBJECT_0,
+    ERROR_INSUFFICIENT_BUFFER, FALSE, HANDLE, LocalFree, NO_ERROR, WAIT_ABANDONED, WAIT_OBJECT_0,
 };
-use windows_sys::Win32::NetworkManagement::IpHelper::{
-    GetTcpTable2,
-    MIB_TCP_STATE_ESTAB,
-    MIB_TCPTABLE2,
-};
+use windows_sys::Win32::NetworkManagement::IpHelper::{GetTcpTable2, MIB_TCP_STATE_ESTAB, MIB_TCPTABLE2};
 use windows_sys::Win32::Networking::WinSock::INADDR_LOOPBACK;
 use windows_sys::Win32::Security::Authorization::ConvertSidToStringSidA;
-use windows_sys::Win32::Security::{
-    GetTokenInformation,
-    IsValidSid,
-    TOKEN_QUERY,
-    TOKEN_USER,
-    TokenUser,
-};
-use windows_sys::Win32::System::Memory::{
-    FILE_MAP_READ,
-    MapViewOfFile,
-    OpenFileMappingW,
-};
+use windows_sys::Win32::Security::{GetTokenInformation, IsValidSid, TOKEN_QUERY, TOKEN_USER, TokenUser};
+use windows_sys::Win32::System::Memory::{FILE_MAP_READ, MapViewOfFile, OpenFileMappingW};
 use windows_sys::Win32::System::Threading::{
-    CreateMutexW,
-    GetCurrentProcess,
-    INFINITE,
-    OpenProcess,
-    OpenProcessToken,
-    PROCESS_ACCESS_RIGHTS,
-    PROCESS_QUERY_LIMITED_INFORMATION,
-    ReleaseMutex,
-    WaitForSingleObject,
+    CreateMutexW, GetCurrentProcess, INFINITE, OpenProcess, OpenProcessToken, PROCESS_ACCESS_RIGHTS,
+    PROCESS_QUERY_LIMITED_INFORMATION, ReleaseMutex, WaitForSingleObject,
 };
 
 use crate::Address;
@@ -249,12 +211,7 @@ fn last_err() -> std::io::Error {
 pub fn unix_stream_get_peer_pid(stream: &UnixStream) -> Result<u32, Error> {
     use std::os::windows::io::AsRawSocket;
 
-    use windows_sys::Win32::Networking::WinSock::{
-        IOC_OUT,
-        IOC_VENDOR,
-        SOCKET_ERROR,
-        WSAIoctl,
-    };
+    use windows_sys::Win32::Networking::WinSock::{IOC_OUT, IOC_VENDOR, SOCKET_ERROR, WSAIoctl};
 
     macro_rules! _WSAIOR {
         ($x:expr, $y:expr) => {

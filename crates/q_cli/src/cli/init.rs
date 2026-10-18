@@ -1,36 +1,22 @@
 use std::borrow::Cow;
 use std::fmt::Display;
-use std::io::{
-    Write,
-    stdout,
-};
+use std::io::{Write, stdout};
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::LazyLock;
-use std::time::SystemTime;
 
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_integrations::shell::{
-    ShellExt,
-    When,
-};
+use fig_integrations::shell::{ShellExt, When};
 use fig_os_shim::Context;
-use fig_util::env_var::Q_SHELL;
-use fig_util::{
-    CLI_BINARY_NAME,
-    PRODUCT_NAME,
-    Shell,
-    Terminal,
-    get_parent_process_exe,
-};
+use fig_util::env_var::TCOMP_SHELL;
+use fig_util::{CLI_BINARY_NAME, PRODUCT_NAME, Shell, Terminal, get_parent_process_exe};
 use indoc::formatdoc;
 
 use super::internal::should_figterm_launch::should_figterm_launch_exit_status;
 use crate::util::app_path_from_bundle_id;
 
-const INLINE_ENABLED_SETTINGS_KEY: &str = "inline.enabled";
 const SHELL_INTEGRATIONS_ENABLED_STATE_KEY: &str = "shell-integrations.enabled";
 
 static IS_SNAPSHOT_TEST: LazyLock<bool> = LazyLock::new(|| fig_os_shim::Env::new().q_init_snapshot_test());
@@ -97,13 +83,13 @@ fn guard_source(
             for line in source.into().lines() {
                 output.push(format!("  {line}").into());
             }
-        },
+        }
         GuardAssignment::AfterSourcing => {
             for line in source.into().lines() {
                 output.push(format!("  {line}").into());
             }
             output.push(format!("  {shell_var}").into());
-        },
+        }
     }
 
     output.push(
@@ -133,7 +119,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
     if let Some(parent_process) = get_parent_process_exe() {
         to_source.push(assign_shell_variable(
             shell,
-            Q_SHELL,
+            TCOMP_SHELL,
             if *IS_SNAPSHOT_TEST {
                 Path::new("/bin/zsh").display()
             } else {
@@ -149,58 +135,20 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         } else {
             should_figterm_launch_exit_status(&Context::new(), true)
         };
-        to_source.push(assign_shell_variable(shell, "SHOULD_QTERM_LAUNCH", status, false));
-    }
-
-    let inline_enabled = fig_settings::settings::get_bool_or(INLINE_ENABLED_SETTINGS_KEY, true);
-
-    if let When::Post = when {
-        if !matches!(
-            (shell, rcfile.as_deref()),
-            (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile" | "bash_profile"))
-        ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
-            && shell == &Shell::Zsh
-            && when == &When::Post
-            && inline_enabled
-            && !*IS_SNAPSHOT_TEST
-        {
-            to_source.push(guard_source(
-                shell,
-                false,
-                "Q_DOTFILES_SOURCED",
-                GuardAssignment::AfterSourcing,
-                fig_integrations::shell::inline_shell_completion_plugin::ZSH_SCRIPT,
-            ));
-        }
-
-        // if stdin().is_tty() && env::var_os(PROCESS_LAUNCHED_BY_Q).is_none() {
-        //     // if no value, assume that we have seen onboarding already.
-        //     // this is explicitly set in onboarding in macOS app.
-        //     let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
-
-        //     if is_logged_in().await && !has_seen_onboarding {
-        //         to_source.push("fig app onboarding".into())
-        //     }
-        // }
-
-        if fig_settings::state::get_bool_or("shell-integrations.immediateLogin", false)
-            && fig_settings::state::set_value("shell-integrations.immediateLogin", false).is_ok()
-        {
-            to_source.push(format!("{CLI_BINARY_NAME} login"));
-        }
+        to_source.push(assign_shell_variable(shell, "SHOULD_TCOMP_PTY_LAUNCH", status, false));
     }
 
     let is_jetbrains_terminal = Terminal::is_jetbrains_terminal();
 
     if when == &When::Pre && shell == &Shell::Bash && is_jetbrains_terminal {
         // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does
-        // not work. Thus, Q_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
+        // not work. Thus, TCOMP_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
         // user's bash_profile is sourced. https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
-        to_source.push("Q_IS_LOGIN_SHELL=1".into());
+        to_source.push("TCOMP_IS_LOGIN_SHELL=1".into());
     }
 
     if let Some(path) = fig_settings::settings::get_string_opt("qterm.path") {
-        to_source.push(assign_shell_variable(shell, "Q_TERM_PATH", path, false));
+        to_source.push(assign_shell_variable(shell, "TCOMP_TERM_PATH", path, false));
     }
 
     let shell_integration_source = shell.get_fig_integration_source(when);
@@ -244,7 +192,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
             to_source.push(guard_source(
                 shell,
                 false,
-                "Q_JETBRAINS_SHELL_INTEGRATION",
+                "TCOMP_JETBRAINS_SHELL_INTEGRATION",
                 GuardAssignment::BeforeSourcing,
                 source,
             ));
@@ -267,30 +215,6 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         }
     }
 
-    if inline_enabled && when == &When::Post && shell == &Shell::Zsh && !*IS_SNAPSHOT_TEST {
-        let key = "prompt.inline.count";
-        if let Ok(prompt_count) = fig_settings::state::get_int(key) {
-            let prompt_count = prompt_count.unwrap_or_default();
-            if prompt_count < 1 {
-                let _ = fig_settings::state::set_value(key, prompt_count + 1);
-                to_source.push(inline_prompt_code(*shell));
-            }
-        }
-    }
-
-    if when == &When::Post && !fig_settings::state::get_bool_or("desktop.auth-watcher.logged-in", true) {
-        let last_sent_at = fig_settings::state::get_int_or("cli.init.login-prompt.sent-at", 0);
-        let now = SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
-        if now - last_sent_at > 60 * 60 * 36 {
-            let _ = fig_settings::state::set_value("cli.init.login-prompt.sent-at", now);
-            // TODO(grant): re-enable, this has not been tested enough before the 1.3.2 launch
-            // to_source.push(login_prompt_code(*shell));
-        }
-    }
-
     Ok(to_source.join("\n"))
 }
 
@@ -298,7 +222,7 @@ fn shell_integrations_disabled_code(shell: Shell) -> String {
     guard_source(
         &shell,
         false,
-        "Q_SHELL_INTEGRATION_DISABLED",
+        "TCOMP_SHELL_INTEGRATION_DISABLED",
         GuardAssignment::AfterSourcing,
         format!(
             "printf '{PRODUCT_NAME} shell integration is disabled.\\nRe-enable by running: {}\\n'",
@@ -312,51 +236,20 @@ fn input_method_prompt_code(shell: Shell, terminal: &Terminal) -> String {
     guard_source(
         &shell,
         false,
-        "Q_INPUT_METHOD_PROMPT",
+        "TCOMP_INPUT_METHOD_PROMPT",
         GuardAssignment::AfterSourcing,
         format!(
             "printf '\\n🚀 {PRODUCT_NAME} supports {terminal}!\\n\\nEnable integrations with {terminal} by \
              running:\\n  {}\\n\\n'\n",
-            format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
-        ),
-    )
-}
-
-fn inline_prompt_code(shell: Shell) -> String {
-    guard_source(
-        &shell,
-        false,
-        "Q_INLINE_PROMPT",
-        GuardAssignment::AfterSourcing,
-        format!(
-            "printf '\\n{PRODUCT_NAME} now supports AI-powered inline completions!\\n\\nTo disable run: {}\\n\\n'\n",
-            format!("{CLI_BINARY_NAME} inline disable").magenta()
+            format!("{CLI_BINARY_NAME} install").magenta()
         ),
     )
 }
 
 #[allow(dead_code)]
-fn login_prompt_code(shell: Shell) -> String {
-    guard_source(
-        &shell,
-        false,
-        "Q_LOGIN_PROMPT",
-        GuardAssignment::AfterSourcing,
-        format!(
-            "printf '\\nRun {} to log back into {PRODUCT_NAME}. Logging back in allows you to use AI features such as inline completions, {}, and {}\\n\\n'\n",
-            format!("{CLI_BINARY_NAME} login").magenta(),
-            format!("{CLI_BINARY_NAME} translate").magenta(),
-            format!("{CLI_BINARY_NAME} chat").magenta()
-        ),
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use std::process::{
-        Command,
-        Stdio,
-    };
+    use std::process::{Command, Stdio};
 
     use super::*;
 
@@ -379,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_prompts() {
-        for shell in Shell::all_test() {
+        for shell in [Shell::Bash, Shell::Zsh] {
             let shell_integrations_disabled_output = run_shell_stdout(&shell, &shell_integrations_disabled_code(shell));
 
             println!("=== shell_integrations_disabled_code {shell:?} ===");
@@ -405,37 +298,7 @@ mod tests {
                 input_method_prompt_output,
                 format!(
                     "\n🚀 {PRODUCT_NAME} supports {terminal}!\n\nEnable integrations with {terminal} by running:\n  {}\n\n",
-                    format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
-                )
-            );
-
-            let inline_prompt_output = run_shell_stdout(&shell, &inline_prompt_code(shell));
-
-            println!("=== inline_prompt {shell:?} ===");
-            println!("{inline_prompt_output}");
-            println!("===");
-
-            assert_eq!(
-                inline_prompt_output,
-                format!(
-                    "\n{PRODUCT_NAME} now supports AI-powered inline completions!\n\nTo disable run: {}\n\n",
-                    format!("{CLI_BINARY_NAME} inline disable").magenta()
-                )
-            );
-
-            let login_prompt_output = run_shell_stdout(&shell, &login_prompt_code(shell));
-
-            println!("=== login_prompt {shell:?} ===");
-            println!("{login_prompt_output}");
-            println!("===");
-
-            assert_eq!(
-                login_prompt_output,
-                format!(
-                    "\nRun {} to log back into {PRODUCT_NAME}. Logging back in allows you to use AI features such as inline completions, {}, and {}\n\n",
-                    format!("{CLI_BINARY_NAME} login").magenta(),
-                    format!("{CLI_BINARY_NAME} translate").magenta(),
-                    format!("{CLI_BINARY_NAME} chat").magenta()
+                    format!("{CLI_BINARY_NAME} install").magenta()
                 )
             );
         }

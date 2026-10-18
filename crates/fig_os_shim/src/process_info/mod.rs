@@ -1,21 +1,11 @@
 mod pid;
 
 use std::path::PathBuf;
-use std::sync::{
-    Arc,
-    Weak,
-};
+use std::sync::{Arc, Weak};
 
-pub use pid::{
-    FakePid,
-    Pid,
-    RawPid,
-};
+pub use pid::{FakePid, Pid, RawPid};
 
-use crate::{
-    Context,
-    Shim,
-};
+use crate::{Context, Shim};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -69,7 +59,7 @@ impl ProcessInfo {
     ///
     /// // Creates a slice with the following process hierarchy:
     /// // q <- bash <- wezterm
-    /// let process_info = ProcessInfo::from_exes(vec!["q", "bash", "wezterm"]);
+    /// let process_info = ProcessInfo::from_exes(vec!["tcomp", "bash", "wezterm"]);
     /// ```
     pub fn from_exes<T: Into<TestExe>>(exes: Vec<T>) -> Self {
         let exes = exes.into_iter().map(|v| v.into()).collect::<Vec<TestExe>>();
@@ -171,9 +161,9 @@ mod tests {
 
     #[test]
     fn test_from_exe_slice() {
-        let info = ProcessInfo::from_exes(vec!["q", "bash", "wezterm"]);
+        let info = ProcessInfo::from_exes(vec!["tcomp", "bash", "wezterm"]);
         let current = info.current_pid();
-        assert_eq!(current.exe().unwrap(), PathBuf::from_str("q").unwrap());
+        assert_eq!(current.exe().unwrap(), PathBuf::from_str("tcomp").unwrap());
         let parent = current.parent().unwrap();
         assert_eq!(parent.exe().unwrap(), PathBuf::from_str("bash").unwrap());
         let grandparent = parent.parent().unwrap();
@@ -184,12 +174,12 @@ mod tests {
     #[test]
     fn test_from_exe_slice_with_cmdline() {
         let info = ProcessInfo::from_exes(vec![
-            (Some("q"), None),
+            (Some("tcomp"), None),
             (Some("bash"), None),
             (Some("python"), Some("terminator")),
         ]);
         let current = info.current_pid();
-        assert_eq!(current.exe().unwrap(), PathBuf::from_str("q").unwrap());
+        assert_eq!(current.exe().unwrap(), PathBuf::from_str("tcomp").unwrap());
         assert_eq!(current.cmdline(), None);
         let parent = current.parent().unwrap();
         assert_eq!(parent.exe().unwrap(), PathBuf::from_str("bash").unwrap());

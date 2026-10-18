@@ -1,102 +1,37 @@
-import autocompleteDemo from "@assets/images/autocomplete_demo.gif";
-import translateDemo from "@assets/images/translate_demo.gif";
-import chatDemo from "@assets/images/chat_demo.gif";
-import { Link } from "@/components/ui/link";
-import { AUTOCOMPLETE_SSH_WIKI_URL, KIRO_CLI_URL } from "@/lib/constants";
-import { Terminal } from "@/components/ui/terminal";
-import { KiroLogo } from "@/components/svg/logo";
-
-export default function Page() {
-  return (
-    <div className="flex flex-col items-start gap-4">
-      <div className="flex flex-col">
-        <h1 className="text-2xl font-bold dark:text-zinc-400">
-          Getting started
-        </h1>
-      </div>
-      <section className="flex flex-col p-6 gap-4 w-full rounded-2xl items-start text-white q-banner">
-        <div className="flex flex-row gap-4 w-full items-center">
-          <div className="flex-shrink-0">
-            <KiroLogo size={60} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <h1 className="font-bold text-lg font-ember leading-none">
-              Amazon Q Developer CLI users can now upgrade to the Kiro CLI
-            </h1>
-            <p className="text-sm leading-tight">
-              Your existing Q Developer CLI workflows and subscription continue
-              to work without any changes. You can update to Kiro CLI manually
-              with{" "}
-              <code style={{ color: "var(--q-banner-link)" }}>q update</code>{" "}
-              today, or wait for the auto-update on 11/24 to apply the change.{" "}
-              <Link
-                href={KIRO_CLI_URL}
-                className="font-medium no-underline"
-                variant="primary"
-                style={{ color: "var(--q-banner-link)" }}
-              >
-                Learn more &gt;
-              </Link>
-            </p>
-          </div>
-        </div>
-      </section>
-      <div className="flex flex-col gap-2 w-full border bg-zinc-50 border-zinc-200 dark:bg-zinc-900 dark:border-zinc-600 rounded-lg p-4 mb-4 overflow-x-auto">
-        <h2 className="font-bold font-ember tracking-tight text-lg dark:text-zinc-300">
-          Launch a new shell session to start using autocomplete!
-        </h2>
-        <ol className="flex flex-col gap-0.5 text-zinc-600 dark:text-zinc-400">
-          <li>
-            <span className="text-sm flex items-baseline gap-1">
-              <span className="font-semibold">Not working?</span>
-              <span>Check out</span>
-              <Link to="/help" variant="blue">
-                Help & support
-              </Link>
-            </span>
-          </li>
-          <li>
-            <span className="text-sm">
-              <span className="font-semibold">Want to customize settings?</span>{" "}
-              Use the tabs in the sidebar.
-            </span>
-          </li>
-          <li>
-            <div className="text-sm flex flex-row items-center gap-1 flex-wrap">
-              <div className="w-10.5">
-                <div className="rounded-full px-2 py-0.5 bg-rose-400/50 dark:bg-rose-600/50 border border-rose-400/80 dark:border-rose-600/80 relative motion-safe:animate-shine before:absolute before:inset-0 before:transform before:-translate-x-full motion-safe:before:animate-shimmer before:bg-gradient-to-r before:filter before:from-rose-600/0 before:via-rose-600/40 before:to-bg-rose-600/0 isolate overflow-hidden mb-0">
-                  <span className="relative z-10 flex items-center">
-                    <p className="tracking-normal text-xs font-medium text-black dark:text-white">
-                      New
-                    </p>
-                  </span>
-                </div>
-              </div>
-              <span className="font-semibold whitespace-nowrap">
-                Want to use SSH?
-              </span>
-              <span className="whitespace-pre">
-                See{" "}
-                <Link href={AUTOCOMPLETE_SSH_WIKI_URL} variant="blue">
-                  Using CLI Autocomplete on a remote machine
-                </Link>{" "}
-                for more information.
-              </span>
-            </div>
-          </li>
-        </ol>
-      </div>
-      <Terminal tabNames={["Autocomplete", "Translation", "Chat"]}>
-        <Terminal.Tab>
-          <img src={autocompleteDemo} alt="autocomplete demo" />
-        </Terminal.Tab>
-        <Terminal.Tab>
-          <img src={translateDemo} alt="translation demo" />
-        </Terminal.Tab>
-        <Terminal.Tab>
-          <img src={chatDemo} alt="chat demo" />
-        </Terminal.Tab>
-      </Terminal>
-    </div>
-  );
+import { useEffect, useState } from "react";
+import { Install, Internal, Fig } from "@aws/amazon-q-developer-cli-api-bindings";
+import { Button } from "@/components/ui/button";
+export default function Setup() {
+  const [status, setStatus] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const refresh = async () => {
+    const keys = ["dotfiles", "accessibility", "inputMethod"] as const;
+    const values = await Promise.all(keys.map(async key => [key, await Install.isInstalled(key)] as const));
+    setStatus(Object.fromEntries(values));
+  };
+  useEffect(() => { refresh().catch(e => setError(String(e))); const timer = setInterval(() => refresh().catch(() => {}), 3000); return () => clearInterval(timer); }, []);
+  async function install(key: "dotfiles" | "accessibility" | "inputMethod") {
+    setError(""); setBusy(true);
+    try { await Install.install(key); await refresh(); }
+    catch (e) { setError(String(e)); } finally { setBusy(false); }
+  }
+  async function finish() {
+    try { await Internal.sendOnboardingRequest({action: Fig.OnboardingAction.FINISH_ONBOARDING}); }
+    catch (e) { setError(String(e)); }
+  }
+  return <div className="max-w-2xl flex flex-col gap-6">
+    <div><h1 className="text-2xl font-semibold">Set up Termcomplete</h1><p className="mt-2 text-sm text-zinc-500">Command suggestions for Bash and Zsh in Terminal and iTerm2.</p></div>
+    {([
+      ["dotfiles", "Shell integration", "Install hooks in your Bash and Zsh startup files. Existing files are backed up before changes."],
+      ["accessibility", "Accessibility", "Allow Termcomplete in System Settings → Privacy & Security → Accessibility."],
+      ["inputMethod", "Cursor positioning helper", "Register the bundled input method so suggestions can follow the terminal cursor."],
+    ] as const).map(([key,title,description]) => <section key={key} className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5 flex items-start justify-between gap-4">
+      <div><h2 className="font-medium">{title}</h2><p className="mt-1 text-sm text-zinc-500">{description}</p><p className="mt-2 text-xs">{status[key] ? "Ready" : "Setup required"}</p></div>
+      <Button disabled={busy || status[key]} onClick={() => install(key)}>{key === "accessibility" ? "Open settings" : "Install"}</Button>
+    </section>)}
+    {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+    <p className="text-sm text-zinc-500">After setup, open a new terminal window and type <code>git </code>. Bundled definitions work offline; some CLI generators query their own services.</p>
+    <Button disabled={!Object.values(status).length || !Object.values(status).every(Boolean)} onClick={finish}>Finish setup</Button>
+  </div>;
 }

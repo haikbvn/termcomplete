@@ -4,11 +4,7 @@ use static_assertions::assert_impl_all;
 use crate::blocking::Connection;
 use crate::message::Message;
 use crate::utils::block_on;
-use crate::{
-    MatchRule,
-    OwnedMatchRule,
-    Result,
-};
+use crate::{MatchRule, OwnedMatchRule, Result};
 
 /// A blocking wrapper of [`crate::MessageStream`].
 ///

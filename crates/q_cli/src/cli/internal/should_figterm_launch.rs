@@ -1,16 +1,13 @@
 use std::borrow::Cow;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-use std::io::{
-    Write,
-    stdout,
-};
+use std::io::{Write, stdout};
 use std::process::ExitCode;
 
 use fig_os_shim::Context;
 use fig_util::Terminal;
 
-const Q_FORCE_FIGTERM_LAUNCH: &str = "Q_FORCE_FIGTERM_LAUNCH";
-const Q_TERM_DISABLED: &str = "Q_TERM_DISABLED";
+const TCOMP_FORCE_FIGTERM_LAUNCH: &str = "TCOMP_FORCE_FIGTERM_LAUNCH";
+const TCOMP_TERM_DISABLED: &str = "TCOMP_TERM_DISABLED";
 const INSIDE_EMACS: &str = "INSIDE_EMACS";
 const TERM_PROGRAM: &str = "TERM_PROGRAM";
 const WARP_TERMINAL: &str = "WarpTerminal";
@@ -42,19 +39,19 @@ impl Status {
                     writeln!(stdout(), "✅ {s}").ok();
                 }
                 Err(0)
-            },
+            }
             Status::DontLaunch(s) => {
                 if !quiet {
                     writeln!(stdout(), "❌ {s}").ok();
                 }
                 Err(1)
-            },
+            }
         }
     }
 }
 
 fn parent_status(ctx: &Context, current_pid: fig_os_shim::process_info::Pid) -> Status {
-    use fig_util::env_var::Q_TERM;
+    use fig_util::env_var::TCOMP_TERM;
     let env = ctx.env();
 
     let parent_pid = match current_pid.parent() {
@@ -77,14 +74,14 @@ fn parent_status(ctx: &Context, current_pid: fig_os_shim::process_info::Pid) -> 
 
     let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
-    if env.in_ssh() && env.get_os(Q_TERM).is_none() {
-        return Status::Launch(format!("In SSH and {Q_TERM} is not set").into());
+    if env.in_ssh() && env.get_os(TCOMP_TERM).is_none() {
+        return Status::Launch(format!("In SSH and {TCOMP_TERM} is not set").into());
     }
 
     if env.in_codespaces() {
-        return match env.get_os(Q_TERM) {
-            Some(_) => Status::DontLaunch(format!("In Codespaces and {Q_TERM} is set").into()),
-            None => Status::Launch(format!("In Codespaces and {Q_TERM} is not set").into()),
+        return match env.get_os(TCOMP_TERM) {
+            Some(_) => Status::DontLaunch(format!("In Codespaces and {TCOMP_TERM} is set").into()),
+            None => Status::Launch(format!("In Codespaces and {TCOMP_TERM} is not set").into()),
         };
     }
 
@@ -204,30 +201,27 @@ fn should_launch(ctx: &Context, quiet: bool) -> u8 {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn should_figterm_launch_exit_status(ctx: &Context, quiet: bool) -> u8 {
-    use fig_util::env_var::{
-        PROCESS_LAUNCHED_BY_Q,
-        Q_PARENT,
-    };
+    use fig_util::env_var::{PROCESS_LAUNCHED_BY_TCOMP, TCOMP_PARENT};
 
     let env = ctx.env();
 
-    if env.get_os(Q_FORCE_FIGTERM_LAUNCH).is_some() {
+    if env.get_os(TCOMP_FORCE_FIGTERM_LAUNCH).is_some() {
         if !quiet {
-            writeln!(stdout(), "✅ {Q_FORCE_FIGTERM_LAUNCH}").ok();
+            writeln!(stdout(), "✅ {TCOMP_FORCE_FIGTERM_LAUNCH}").ok();
         }
         return 0;
     }
 
-    if env.get_os(Q_TERM_DISABLED).is_some() {
+    if env.get_os(TCOMP_TERM_DISABLED).is_some() {
         if !quiet {
-            writeln!(stdout(), "❌ {Q_TERM_DISABLED}").ok();
+            writeln!(stdout(), "❌ {TCOMP_TERM_DISABLED}").ok();
         }
         return 1;
     }
 
-    if env.get_os(PROCESS_LAUNCHED_BY_Q).is_some() {
+    if env.get_os(PROCESS_LAUNCHED_BY_TCOMP).is_some() {
         if !quiet {
-            writeln!(stdout(), "❌ {PROCESS_LAUNCHED_BY_Q}").ok();
+            writeln!(stdout(), "❌ {PROCESS_LAUNCHED_BY_TCOMP}").ok();
         }
         return 1;
     }
@@ -276,10 +270,10 @@ pub fn should_figterm_launch_exit_status(ctx: &Context, quiet: bool) -> u8 {
         return 1;
     }
 
-    // If we are in SSH and there is no Q_PARENT dont launch
-    if env.in_ssh() && env.get_os(Q_PARENT).is_none() {
+    // If we are in SSH and there is no TCOMP_PARENT dont launch
+    if env.in_ssh() && env.get_os(TCOMP_PARENT).is_none() {
         if !quiet {
-            writeln!(stdout(), "❌ In SSH without {Q_PARENT}").ok();
+            writeln!(stdout(), "❌ In SSH without {TCOMP_PARENT}").ok();
         }
         return 1;
     }
@@ -321,22 +315,9 @@ mod tests {
 
     use std::path::PathBuf;
 
-    use fig_os_shim::process_info::{
-        FakePid,
-        Pid,
-        ProcessInfo,
-    };
-    use fig_os_shim::{
-        ContextBuilder,
-        Env,
-        Os,
-        Platform,
-    };
-    use fig_util::env_var::{
-        PROCESS_LAUNCHED_BY_Q,
-        Q_PARENT,
-        Q_TERM,
-    };
+    use fig_os_shim::process_info::{FakePid, Pid, ProcessInfo};
+    use fig_os_shim::{ContextBuilder, Env, Os, Platform};
+    use fig_util::env_var::{PROCESS_LAUNCHED_BY_TCOMP, TCOMP_PARENT, TCOMP_TERM};
 
     use super::*;
 
@@ -443,18 +424,18 @@ mod tests {
     #[test]
     fn override_tests() {
         let tests = [
-            test(Q_FORCE_FIGTERM_LAUNCH)
-                .env(&[(Q_FORCE_FIGTERM_LAUNCH, "1")])
+            test(TCOMP_FORCE_FIGTERM_LAUNCH)
+                .env(&[(TCOMP_FORCE_FIGTERM_LAUNCH, "1")])
                 .expect(0),
-            test(Q_TERM_DISABLED).env(&[(Q_TERM_DISABLED, "1")]).expect(1),
-            test(PROCESS_LAUNCHED_BY_Q)
-                .env(&[(PROCESS_LAUNCHED_BY_Q, "1")])
+            test(TCOMP_TERM_DISABLED).env(&[(TCOMP_TERM_DISABLED, "1")]).expect(1),
+            test(PROCESS_LAUNCHED_BY_TCOMP)
+                .env(&[(PROCESS_LAUNCHED_BY_TCOMP, "1")])
                 .expect(1),
             test(INSIDE_EMACS).env(&[(INSIDE_EMACS, "1")]).expect(1),
             test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
             test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
             test("In CI").env(&[("CI", "1")]).expect(1),
-            test(format!("In ssh without {Q_PARENT}"))
+            test(format!("In ssh without {TCOMP_PARENT}"))
                 .env(&[("SSH_CLIENT", "1")])
                 .expect(1),
             test("__PWSH_LOGIN_CHECKED")
@@ -475,10 +456,10 @@ mod tests {
         let tests = [
             test("no parent id").expect(1),
             test("invalid parent").parent_exe("/usr/bin/invalid").expect(1),
-            test(format!("In Codespaces with {Q_TERM}"))
+            test(format!("In Codespaces with {TCOMP_TERM}"))
                 .parent_exe("/usr/bin/zsh")
                 .env(&[("CODESPACES", "1")])
-                .env(&[(Q_TERM, "1")])
+                .env(&[(TCOMP_TERM, "1")])
                 .expect(1),
         ];
         for test in tests {
@@ -528,13 +509,13 @@ mod tests {
                 .parent_exe("/usr/bin/zsh")
                 .grandparent_exe("/usr/bin/tmux")
                 .expect(0),
-            test(format!("In Codespaces without {Q_TERM}"))
+            test(format!("In Codespaces without {TCOMP_TERM}"))
                 .parent_exe("/usr/bin/zsh")
                 .env(&[("CODESPACES", "1")])
                 .expect(0),
-            test(format!("In ssh and {Q_TERM} is not set"))
+            test(format!("In ssh and {TCOMP_TERM} is not set"))
                 .parent_exe("/usr/bin/zsh")
-                .env(&[("SSH_CLIENT", "1"), (Q_PARENT, "1")])
+                .env(&[("SSH_CLIENT", "1"), (TCOMP_PARENT, "1")])
                 .expect(0),
         ];
         for test in tests {

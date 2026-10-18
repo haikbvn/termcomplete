@@ -7,10 +7,7 @@ use xdg_home::home_dir;
 use zvariant::Str;
 
 use crate::file::FileLines;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 #[derive(Debug)]
 pub(super) struct Cookie {

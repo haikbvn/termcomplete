@@ -1,33 +1,15 @@
-use alacritty_terminal::event::{
-    Event,
-    EventListener,
-};
+use alacritty_terminal::event::{Event, EventListener};
 use alacritty_terminal::term::ShellState;
 use fig_proto::remote::Hostbound;
-use fig_proto::remote_hooks::{
-    hook_to_message,
-    new_postexec_hook,
-    new_preexec_hook,
-    new_prompt_hook,
-};
+use fig_proto::remote_hooks::{hook_to_message, new_postexec_hook, new_preexec_hook, new_prompt_hook};
 // use fig_telemetry::sentry::configure_scope;
 use flume::Sender;
 use tracing::level_filters::LevelFilter;
-use tracing::{
-    debug,
-    error,
-};
+use tracing::{debug, error};
 
-use crate::history::{
-    HistoryCommand,
-    HistorySender,
-};
-use crate::inline::on_prompt;
-use crate::{
-    INSERT_ON_NEW_CMD,
-    MainLoopEvent,
-    shell_state_to_context,
-};
+use crate::history::{HistoryCommand, HistorySender};
+
+use crate::{INSERT_ON_NEW_CMD, MainLoopEvent, shell_state_to_context};
 
 pub struct EventHandler {
     socket_sender: Sender<Hostbound>,
@@ -92,7 +74,7 @@ impl EventListener for EventHandler {
                         error!(%err, "Sender error");
                     }
                 }
-            },
+            }
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
@@ -112,10 +94,8 @@ impl EventListener for EventHandler {
                         error!(%err, "Sender error");
                     }
                 }
-            },
+            }
             Event::CommandInfo(command_info) => {
-                tokio::spawn(on_prompt());
-
                 let context = shell_state_to_context(shell_state);
                 let hook = new_postexec_hook(context, command_info.command.clone(), command_info.exit_code);
                 let message = hook_to_message(hook);
@@ -126,7 +106,7 @@ impl EventListener for EventHandler {
                 if let Err(err) = self.history_sender.send(HistoryCommand::Insert(command_info.clone())) {
                     error!(%err, "Sender error");
                 }
-            },
+            }
             Event::ShellChanged => {
                 // let shell = &shell_state.local_context.shell;
                 // configure_scope(|scope| {
@@ -134,7 +114,7 @@ impl EventListener for EventHandler {
                 //         scope.set_tag("shell", shell);
                 //     }
                 // });
-            },
+            }
         }
     }
 

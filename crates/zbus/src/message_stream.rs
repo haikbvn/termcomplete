@@ -1,32 +1,17 @@
 use std::pin::Pin;
 use std::sync::Arc;
-use std::task::{
-    Context,
-    Poll,
-};
+use std::task::{Context, Poll};
 
 use async_broadcast::Receiver as ActiveReceiver;
 use futures_core::stream;
 use futures_util::stream::FusedStream;
-use ordered_stream::{
-    OrderedStream,
-    PollResult,
-};
+use ordered_stream::{OrderedStream, PollResult};
 use static_assertions::assert_impl_all;
 use tracing::warn;
 
 use crate::connection::ConnectionInner;
-use crate::message::{
-    Message,
-    Sequence,
-};
-use crate::{
-    AsyncDrop,
-    Connection,
-    MatchRule,
-    OwnedMatchRule,
-    Result,
-};
+use crate::message::{Message, Sequence};
+use crate::{AsyncDrop, Connection, MatchRule, OwnedMatchRule, Result};
 
 /// A [`stream::Stream`] implementation that yields [`Message`] items.
 ///

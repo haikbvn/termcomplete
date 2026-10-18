@@ -1,38 +1,16 @@
 use std::collections::VecDeque;
 
 use async_trait::async_trait;
-use sha1::{
-    Digest,
-    Sha1,
-};
-use tracing::{
-    debug,
-    instrument,
-    trace,
-    warn,
-};
+use sha1::{Digest, Sha1};
+use tracing::{debug, instrument, trace, warn};
 
 use super::{
-    AuthMechanism,
-    Authenticated,
-    BoxedSplit,
-    Command,
-    Common,
-    Cookie,
-    Error,
-    Handshake,
-    OwnedGuid,
-    Result,
-    Str,
-    random_ascii,
-    sasl_auth_id,
+    AuthMechanism, Authenticated, BoxedSplit, Command, Common, Cookie, Error, Handshake, OwnedGuid, Result, Str,
+    random_ascii, sasl_auth_id,
 };
 use crate::conn::socket::ReadHalf;
 use crate::names::OwnedUniqueName;
-use crate::{
-    Message,
-    is_flatpak,
-};
+use crate::{Message, is_flatpak};
 
 /// A representation of an in-progress handshake, client-side
 ///

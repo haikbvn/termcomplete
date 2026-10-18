@@ -4,68 +4,25 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::fmt::Write;
 use std::marker::PhantomData;
-use std::ops::{
-    Deref,
-    DerefMut,
-};
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use event_listener::{
-    Event,
-    EventListener,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use event_listener::{Event, EventListener};
+use serde::{Deserialize, Serialize};
 use static_assertions::assert_impl_all;
-use tracing::{
-    Instrument,
-    debug,
-    instrument,
-    trace,
-    trace_span,
-};
+use tracing::{Instrument, debug, instrument, trace, trace_span};
 use zbus_names::InterfaceName;
-use zvariant::{
-    ObjectPath,
-    OwnedObjectPath,
-    OwnedValue,
-    Signature,
-    Type,
-    Value,
-};
+use zvariant::{ObjectPath, OwnedObjectPath, OwnedValue, Signature, Type, Value};
 
-use crate::async_lock::{
-    RwLock,
-    RwLockReadGuard,
-    RwLockWriteGuard,
-};
+use crate::async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use crate::connection::WeakConnection;
-use crate::fdo::{
-    Introspectable,
-    ManagedObjects,
-    ObjectManager,
-    Peer,
-    Properties,
-};
-use crate::message::{
-    Header,
-    Message,
-};
-use crate::{
-    Connection,
-    Error,
-    Result,
-    fdo,
-};
+use crate::fdo::{Introspectable, ManagedObjects, ObjectManager, Peer, Properties};
+use crate::message::{Header, Message};
+use crate::{Connection, Error, Result, fdo};
 
 mod interface;
 pub(crate) use interface::ArcInterface;
-pub use interface::{
-    DispatchResult,
-    Interface,
-};
+pub use interface::{DispatchResult, Interface};
 
 mod signal_context;
 pub use signal_context::SignalContext;

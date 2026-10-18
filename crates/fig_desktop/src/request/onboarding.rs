@@ -1,17 +1,7 @@
 use fig_integrations::shell::ShellExt;
-use fig_os_shim::{
-    ContextArcProvider,
-    ContextProvider,
-    EnvProvider,
-};
-use fig_proto::fig::{
-    OnboardingAction,
-    OnboardingRequest,
-};
-use fig_settings::{
-    SettingsProvider,
-    StateProvider,
-};
+use fig_os_shim::{ContextArcProvider, ContextProvider, EnvProvider};
+use fig_proto::fig::{OnboardingAction, OnboardingRequest};
+use fig_settings::{SettingsProvider, StateProvider};
 use fig_util::Shell;
 use tao::event_loop::ControlFlow;
 #[cfg(target_os = "macos")]
@@ -19,10 +9,7 @@ use tokio::process::Command;
 #[allow(unused_imports)]
 use tracing::error;
 
-use super::{
-    RequestResult,
-    RequestResultImpl,
-};
+use super::{RequestResult, RequestResultImpl};
 use crate::EventLoopProxy;
 use crate::event::Event;
 
@@ -37,7 +24,7 @@ where
     match request.action() {
         OnboardingAction::InstallationScript => {
             let mut errs: Vec<String> = vec![];
-            for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
+            for shell in [Shell::Bash, Shell::Zsh] {
                 match shell.get_shell_integrations(ctx.env()) {
                     Ok(integrations) => {
                         for integration in integrations {
@@ -45,10 +32,10 @@ where
                                 errs.push(format!("{integration}: {err}"));
                             }
                         }
-                    },
+                    }
                     Err(err) => {
                         errs.push(format!("{shell}: {err}"));
-                    },
+                    }
                 }
             }
 
@@ -56,27 +43,12 @@ where
                 [] => RequestResult::success(),
                 errs => RequestResult::error(errs.join("\n")),
             }
-        },
-        OnboardingAction::Uninstall => {
-            use fig_install::{
-                InstallComponents,
-                uninstall,
-            };
-
-            fig_util::open_url(fig_install::UNINSTALL_URL).ok();
-
-            let result = match uninstall(InstallComponents::all(), ctx.context_arc()).await {
-                Ok(_) => RequestResult::success(),
-                Err(err) => RequestResult::error(err.to_string()),
-            };
-
-            proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).ok();
-            result
-        },
+        }
+        OnboardingAction::Uninstall => RequestResult::error("Run tcomp uninstall to remove shell integrations"),
         OnboardingAction::FinishOnboarding => {
             post_login().await;
             RequestResult::success()
-        },
+        }
         OnboardingAction::LaunchShellOnboarding => {
             fig_settings::state::set_value("user.onboarding", false).ok();
 
@@ -110,12 +82,9 @@ where
                     }
                 }
             }
-        },
+        }
         OnboardingAction::PromptForAccessibilityPermission => {
-            use crate::local_ipc::{
-                LocalResponse,
-                commands,
-            };
+            use crate::local_ipc::{LocalResponse, commands};
             let res = commands::prompt_for_accessibility_permission(ctx)
                 .await
                 .unwrap_or_else(|e| e);
@@ -126,11 +95,11 @@ where
                 } => RequestResult::error(message),
                 _ => RequestResult::error("Failed to prompt for accessibility permissions"),
             }
-        },
+        }
         OnboardingAction::PostLogin => {
             post_login().await;
             RequestResult::success()
-        },
+        }
         OnboardingAction::CloseAccessibilityPromptWindow
         | OnboardingAction::RequestRestart
         | OnboardingAction::CloseInputMethodPromptWindow => RequestResult::error("Unimplemented"),

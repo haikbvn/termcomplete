@@ -24,14 +24,6 @@ export type SpecFileImport =
       versions: Fig.VersionDiffMap;
     };
 
-const makeCdnUrlFactory =
-  (baseUrl: string) =>
-  (specName: string, ext: string = "js") =>
-    `${baseUrl}${specName}.${ext}`;
-
-const cdnUrlFactory = makeCdnUrlFactory(
-  "https://specs.q.us-east-1.amazonaws.com/",
-);
 
 const stringImportCache = new Map<string, unknown>();
 
@@ -83,53 +75,13 @@ export async function importSpecFromFile(
 export const canLoadSpecProtocol = () => window.location.protocol !== "https:";
 
 // TODO: this is a problem for diff-versioned specs
-export async function importFromPublicCDN<T = SpecFileImport>(
-  name: string,
-): Promise<T> {
-  if (canLoadSpecProtocol()) {
-    return withTimeout(
-      20000,
-      import(
-        /* @vite-ignore */
-        `spec://localhost/${name}.js`
-      ),
-    );
-  }
-
-  // Total of retries in the worst case should be close to previous timeout value
-  // 500ms * 2^5 + 5 * 1000ms + 5 * 100ms = 21500ms, before the timeout was 20000ms
-  try {
-    return await exponentialBackoff(
-      {
-        attemptTimeout: 1000,
-        baseDelay: 500,
-        maxRetries: 5,
-        jitter: 100,
-      },
-
-      () => import(/* @vite-ignore */ cdnUrlFactory(name)),
-    );
-  } catch {
-    /**/
-  }
-
-  throw new SpecCDNError("Unable to load from a CDN");
+export async function importFromPublicCDN<T = SpecFileImport>(name: string): Promise<T> {
+  return withTimeout(20000, import(/* @vite-ignore */ `spec://localhost/${name}.js`));
 }
-
 async function jsonFromPublicCDN(path: string): Promise<unknown> {
-  if (canLoadSpecProtocol()) {
-    return fetch(`spec://localhost/${path}.json`).then((res) => res.json());
-  }
-
-  return exponentialBackoff(
-    {
-      attemptTimeout: 1000,
-      baseDelay: 500,
-      maxRetries: 5,
-      jitter: 100,
-    },
-    () => fetch(cdnUrlFactory(path, "json")).then((res) => res.json()),
-  );
+  const response = await fetch(`spec://localhost/${path}.json`);
+  if (!response.ok) throw new Error(`Missing bundled spec index: ${path}`);
+  return response.json();
 }
 
 // TODO: this is a problem for diff-versioned specs

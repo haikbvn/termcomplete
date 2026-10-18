@@ -1,30 +1,12 @@
 use std::num::NonZeroU32;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    BusName,
-    ErrorName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
-use zvariant::{
-    ObjectPath,
-    Signature,
-    Type,
-};
+use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
+use zvariant::{ObjectPath, Signature, Type};
 
 use crate::Result;
-use crate::message::{
-    Field,
-    FieldCode,
-    Header,
-    Message,
-};
+use crate::message::{Field, FieldCode, Header, Message};
 
 // It's actually 10 (and even not that) but let's round it to next 8-byte alignment
 const MAX_FIELDS_IN_MESSAGE: usize = 16;
@@ -234,10 +216,7 @@ impl<'m> std::ops::Deref for Fields<'m> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Field,
-        Fields,
-    };
+    use super::{Field, Fields};
 
     #[test]
     fn test() {

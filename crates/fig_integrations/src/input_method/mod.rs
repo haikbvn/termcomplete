@@ -3,49 +3,19 @@
 
 use std::borrow::Cow;
 use std::io::ErrorKind;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::ptr;
 
 use async_trait::async_trait;
-use core_foundation::array::{
-    CFArray,
-    CFArrayRef,
-};
-use core_foundation::base::{
-    Boolean,
-    CFGetTypeID,
-    CFType,
-    CFTypeID,
-    CFTypeRef,
-    OSStatus,
-    TCFType,
-    TCFTypeRef,
-};
+use core_foundation::array::{CFArray, CFArrayRef};
+use core_foundation::base::{Boolean, CFGetTypeID, CFType, CFTypeID, CFTypeRef, OSStatus, TCFType, TCFTypeRef};
 use core_foundation::boolean::CFBoolean;
-use core_foundation::bundle::{
-    CFBundle,
-    CFBundleRef,
-};
-use core_foundation::dictionary::{
-    CFDictionary,
-    CFDictionaryRef,
-};
-use core_foundation::string::{
-    CFString,
-    CFStringRef,
-};
-use core_foundation::url::{
-    CFURL,
-    CFURLRef,
-};
-use core_foundation::{
-    declare_TCFType,
-    impl_TCFType,
-};
+use core_foundation::bundle::{CFBundle, CFBundleRef};
+use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
+use core_foundation::string::{CFString, CFStringRef};
+use core_foundation::url::{CFURL, CFURLRef};
+use core_foundation::{declare_TCFType, impl_TCFType};
 use fig_settings::state;
 use fig_util::Terminal;
 use fig_util::consts::CLI_BINARY_NAME;
@@ -53,28 +23,13 @@ use fig_util::directories::home_dir;
 use fig_util::macos::BUNDLE_CONTENTS_HELPERS_PATH;
 use macos_utils::applications;
 use objc::runtime::Object;
-use objc::{
-    class,
-    msg_send,
-    sel,
-    sel_impl,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use objc::{class, msg_send, sel, sel_impl};
+use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tracing::{
-    debug,
-    info,
-    trace,
-};
+use tracing::{debug, info, trace};
 
 use crate::Integration;
-use crate::error::{
-    ErrorExt,
-    Result,
-};
+use crate::error::{ErrorExt, Result};
 
 pub enum __TISInputSource {}
 pub type TISInputSourceRef = *const __TISInputSource;
@@ -263,7 +218,7 @@ impl std::default::Default for InputMethod {
         let fig_app_path = fig_util::app_bundle_path();
         let bundle_path = fig_app_path
             .join(BUNDLE_CONTENTS_HELPERS_PATH)
-            .join("CodeWhispererInputMethod.app");
+            .join("TermcompleteInputMethod.app");
         Self { bundle_path }
     }
 }
@@ -366,7 +321,7 @@ impl InputMethod {
                             }
                         }),
                     }
-                },
+                }
             }
         }
     }
@@ -378,7 +333,7 @@ impl InputMethod {
                 return Err(InputMethodError::InvalidBundle {
                     inner: "Input method bundle name cannot be determined".into(),
                 });
-            },
+            }
         };
 
         Ok(InputMethod::input_method_directory().join(input_method_name))
@@ -391,7 +346,7 @@ impl InputMethod {
                 return Err(InputMethodError::InvalidBundle {
                     inner: "Could not get URL for input method bundle".into(),
                 });
-            },
+            }
         };
 
         let bundle = match CFBundle::new(url) {
@@ -400,7 +355,7 @@ impl InputMethod {
                 return Err(InputMethodError::InvalidBundle {
                     inner: format!("Could not load bundle for URL {}", self.bundle_path.display()).into(),
                 });
-            },
+            }
         };
 
         let identifier = unsafe { CFBundleGetIdentifier(bundle.as_concrete_TypeRef()) };
@@ -469,7 +424,7 @@ impl Integration for InputMethod {
                     }
                     .into());
                 }
-            },
+            }
             Err(err) if err.kind() == ErrorKind::NotFound => return Err(InputMethodError::NotInstalled.into()),
             Err(err) => return Err(err.into()),
         }
@@ -585,7 +540,7 @@ impl Integration for InputMethod {
                             true,
                         )
                         .ok();
-                    },
+                    }
                     _ => (),
                 }
             }
@@ -651,8 +606,8 @@ impl Integration for InputMethod {
                     fs::remove_file(&destination).await?;
                     fs::symlink(&self.bundle_path, destination).await?;
                 }
-            },
-            Err(err) if err.kind() == ErrorKind::NotFound => {},
+            }
+            Err(err) if err.kind() == ErrorKind::NotFound => {}
             Err(err) => return Err(err.into()),
         }
 
@@ -742,9 +697,9 @@ mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
-    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.inputmethod.codewhisperer";
+    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.github.haikbvn.termcomplete.inputmethod";
     const TEST_INPUT_METHOD_BUNDLE_URL: &str =
-        "/Applications/Amazon Q.app/Contents/Helpers/CodeWhispererInputMethod.app";
+        "/Applications/Termcomplete.app/Contents/Helpers/TermcompleteInputMethod.app";
 
     fn input_method() -> TISInputSource {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };
@@ -787,7 +742,7 @@ mod tests {
                     Ok(_) => println!("Uninstalled!"),
                     Err(e) => println!("{e}"),
                 }
-            },
+            }
             None => {
                 println!("No input sources found for {bundle_id}");
                 println!("Installing...");
@@ -795,7 +750,7 @@ mod tests {
                     Ok(_) => println!("Installed!"),
                     Err(e) => println!("{e}"),
                 };
-            },
+            }
         }
     }
 
@@ -812,7 +767,7 @@ mod tests {
                 assert!(!source.is_selected().unwrap_or(true));
                 source.select().ok();
                 assert!(selected == source.is_selected());
-            },
+            }
             Some(false) => {
                 source.deselect().ok();
                 assert!(!source.is_selected().unwrap_or_default());
@@ -820,7 +775,7 @@ mod tests {
                 assert!(source.is_selected().unwrap_or(false));
                 source.deselect().ok();
                 assert!(selected == source.is_selected());
-            },
+            }
 
             None => unreachable!("Is selected should be defined"),
         }
@@ -839,7 +794,7 @@ mod tests {
                 assert!(sources[0].category().unwrap() == "TISCategoryPaletteInputSource");
 
                 println!("{:?}", sources[0]);
-            },
+            }
             None => unreachable!("{} should always exist.", bundle_identifier),
         }
     }

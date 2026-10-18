@@ -6,30 +6,14 @@ use std::ops::Deref;
 use enumflags2::BitFlags;
 use futures_util::StreamExt;
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    BusName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
-use zvariant::{
-    ObjectPath,
-    OwnedValue,
-    Value,
-};
+use zbus_names::{BusName, InterfaceName, MemberName, UniqueName};
+use zvariant::{ObjectPath, OwnedValue, Value};
 
 use crate::blocking::Connection;
 use crate::message::Message;
-use crate::proxy::{
-    MethodFlags,
-    ProxyDefault,
-};
+use crate::proxy::{MethodFlags, ProxyDefault};
 use crate::utils::block_on;
-use crate::{
-    Error,
-    Result,
-    fdo,
-};
+use crate::{Error, Result, fdo};
 
 mod builder;
 pub use builder::Builder;

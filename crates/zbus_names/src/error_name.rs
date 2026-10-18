@@ -1,38 +1,14 @@
-use std::borrow::{
-    Borrow,
-    Cow,
-};
-use std::fmt::{
-    self,
-    Debug,
-    Display,
-    Formatter,
-};
+use std::borrow::{Borrow, Cow};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::ops::Deref;
 use std::sync::Arc;
 
-use serde::{
-    Deserialize,
-    Serialize,
-    de,
-};
+use serde::{Deserialize, Serialize, de};
 use static_assertions::assert_impl_all;
-use zvariant::{
-    NoneValue,
-    OwnedValue,
-    Str,
-    Type,
-    Value,
-};
+use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 
-use crate::utils::{
-    impl_str_basic,
-    impl_try_from,
-};
-use crate::{
-    Error,
-    Result,
-};
+use crate::utils::{impl_str_basic, impl_try_from};
+use crate::{Error, Result};
 
 /// String that identifies an [error name][en] on the bus.
 ///

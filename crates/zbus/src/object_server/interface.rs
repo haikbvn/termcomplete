@@ -1,12 +1,6 @@
-use std::any::{
-    Any,
-    TypeId,
-};
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use std::fmt::{
-    self,
-    Write,
-};
+use std::fmt::{self, Write};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -14,25 +8,13 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use tracing::trace;
 use zbus::message::Flags;
-use zbus_names::{
-    InterfaceName,
-    MemberName,
-};
-use zvariant::{
-    DynamicType,
-    OwnedValue,
-    Value,
-};
+use zbus_names::{InterfaceName, MemberName};
+use zvariant::{DynamicType, OwnedValue, Value};
 
 use crate::async_lock::RwLock;
 use crate::message::Message;
 use crate::object_server::SignalContext;
-use crate::{
-    Connection,
-    ObjectServer,
-    Result,
-    fdo,
-};
+use crate::{Connection, ObjectServer, Result, fdo};
 
 /// A helper type returned by [`Interface`] callbacks.
 pub enum DispatchResult<'a> {

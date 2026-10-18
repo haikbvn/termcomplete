@@ -1,8 +1,5 @@
 use std::convert::Infallible;
-use std::{
-    error,
-    fmt,
-};
+use std::{error, fmt};
 
 use static_assertions::assert_impl_all;
 use zvariant::Error as VariantError;

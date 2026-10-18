@@ -1,77 +1,75 @@
-mod common;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
-use common::*;
-
-// Integrations tests for the CLI
-//
-// This should be used to test interfaces that external code may rely on
-// (exit codes, structured output, CLI flags)
-
-#[test]
-fn version_flag_has_status_code_zero() -> Result<()> {
-    cli()
-        .arg("--version")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")));
-    Ok(())
+fn cli() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_tcomp"))
 }
 
 #[test]
-fn version_changelog_has_status_code_zero() -> Result<()> {
-    cli()
-        .arg("version")
-        .arg("--changelog")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Changelog for version"));
-    Ok(())
+fn standalone_command_contract() {
+    let help = cli().arg("--help").output().unwrap();
+    assert!(help.status.success());
+    let text = String::from_utf8(help.stdout).unwrap();
+    assert!(text.contains("Standalone terminal autocomplete"));
+    for command in ["install", "uninstall", "doctor", "settings", "theme"] {
+        assert!(text.contains(command));
+    }
+    for command in ["login", "chat", "translate", "agent"] {
+        assert!(!cli().args([command, "--help"]).status().unwrap().success());
+    }
+    let version = cli().arg("--version").output().unwrap();
+    assert!(version.status.success());
+    assert_eq!(
+        String::from_utf8(version.stdout).unwrap().trim(),
+        format!("tcomp {}", env!("CARGO_PKG_VERSION"))
+    );
 }
 
 #[test]
-fn version_changelog_all_has_status_code_zero() -> Result<()> {
-    cli()
-        .arg("version")
-        .arg("--changelog=all")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Changelog for all versions"));
-    Ok(())
+fn settings_keep_json_types_and_unrelated_keys() {
+    let directory = tempfile::tempdir().unwrap();
+    let run = |args: &[&str]| {
+        let result = cli()
+            .env("TCOMP_DATA_DIR", directory.path())
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stderr));
+        result.stdout
+    };
+    run(&["settings", "autocomplete.disable", "true"]);
+    run(&["settings", "appearance.theme", "dark"]);
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&run(&["settings", "autocomplete.disable"])).unwrap(),
+        true
+    );
+    run(&["settings", "autocomplete.disable", "--delete"]);
+    let settings: serde_json::Value = serde_json::from_slice(&run(&["settings"])).unwrap();
+    assert_eq!(settings["appearance.theme"], "dark");
+    assert!(settings.get("autocomplete.disable").is_none());
 }
 
 #[test]
-fn version_changelog_specific_has_status_code_zero() -> Result<()> {
-    cli()
-        .arg("version")
-        .arg("--changelog=1.8.0")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Changelog for version 1.8.0"));
-    Ok(())
-}
-
-#[test]
-fn version_changelog_nonexistent_version() -> Result<()> {
-    // Test with a version that's unlikely to exist
-    cli()
-        .arg("version")
-        .arg("--changelog=999.999.999")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            "No changelog information available for version 999.999.999",
-        ));
-    Ok(())
-}
-
-#[test]
-fn help_flag_has_status_code_zero() -> Result<()> {
-    cli().arg("--help").assert().success();
-    Ok(())
-}
-
-#[test]
-fn help_all_flag_has_status_code_zero() -> Result<()> {
-    cli().arg("--help-all").assert().success();
-    Ok(())
+fn generated_bash_and_zsh_parse_without_login_or_ai_hooks() {
+    for (shell, exe) in [("bash", "/bin/bash"), ("zsh", "/bin/zsh")] {
+        for when in ["pre", "post"] {
+            let result = cli()
+                .env("TCOMP_INIT_SNAPSHOT_TEST", "1")
+                .args(["init", shell, when])
+                .output()
+                .unwrap();
+            assert!(result.status.success());
+            let text = String::from_utf8(result.stdout).unwrap();
+            assert!(
+                !text.contains("tcomp login")
+                    && !text.contains("tcomp inline")
+                    && !text.contains("QTERM_SESSION_ID")
+                    && !text.contains("fig_osc")
+                    && !text.contains("__fig_")
+            );
+            let mut parser = Command::new(exe).arg("-n").stdin(Stdio::piped()).spawn().unwrap();
+            parser.stdin.take().unwrap().write_all(text.as_bytes()).unwrap();
+            assert!(parser.wait().unwrap().success(), "{shell} {when}");
+        }
+    }
 }

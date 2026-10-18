@@ -1,90 +1,30 @@
 //! Connection API.
 use std::collections::HashMap;
-use std::io::{
-    self,
-    ErrorKind,
-};
+use std::io::{self, ErrorKind};
 use std::num::NonZeroU32;
 use std::ops::Deref;
 use std::pin::Pin;
-use std::sync::{
-    Arc,
-    OnceLock,
-    Weak,
-};
-use std::task::{
-    Context,
-    Poll,
-};
+use std::sync::{Arc, OnceLock, Weak};
+use std::task::{Context, Poll};
 
-use async_broadcast::{
-    InactiveReceiver,
-    Receiver,
-    Sender as Broadcaster,
-    broadcast,
-};
+use async_broadcast::{InactiveReceiver, Receiver, Sender as Broadcaster, broadcast};
 use enumflags2::BitFlags;
-use event_listener::{
-    Event,
-    EventListener,
-};
+use event_listener::{Event, EventListener};
 use futures_core::Future;
 use futures_util::StreamExt;
-use ordered_stream::{
-    OrderedFuture,
-    OrderedStream,
-    PollResult,
-};
+use ordered_stream::{OrderedFuture, OrderedStream, PollResult};
 use static_assertions::assert_impl_all;
-use tracing::{
-    Instrument,
-    debug,
-    info_span,
-    instrument,
-    trace,
-    trace_span,
-    warn,
-};
-use zbus_names::{
-    BusName,
-    ErrorName,
-    InterfaceName,
-    MemberName,
-    OwnedUniqueName,
-    WellKnownName,
-};
+use tracing::{Instrument, debug, info_span, instrument, trace, trace_span, warn};
+use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, OwnedUniqueName, WellKnownName};
 use zvariant::ObjectPath;
 
-use crate::async_lock::{
-    Mutex,
-    Semaphore,
-    SemaphorePermit,
-};
-use crate::fdo::{
-    self,
-    ConnectionCredentials,
-    RequestNameFlags,
-    RequestNameReply,
-};
-use crate::message::{
-    Flags,
-    Message,
-    Type,
-};
+use crate::async_lock::{Mutex, Semaphore, SemaphorePermit};
+use crate::fdo::{self, ConnectionCredentials, RequestNameFlags, RequestNameReply};
+use crate::message::{Flags, Message, Type};
 use crate::proxy::CacheProperties;
 use crate::{
-    DBusError,
-    Error,
-    Executor,
-    MatchRule,
-    MessageStream,
-    ObjectServer,
-    OwnedGuid,
-    OwnedMatchRule,
-    Result,
-    Task,
-    blocking,
-    is_flatpak,
+    DBusError, Error, Executor, MatchRule, MessageStream, ObjectServer, OwnedGuid, OwnedMatchRule, Result, Task,
+    blocking, is_flatpak,
 };
 
 mod builder;
@@ -1400,10 +1340,7 @@ mod tests {
     #[ignore = "fails in ci"]
     fn connect_launchd_session_bus() {
         use crate::address::transport::Launchd;
-        use crate::address::{
-            Address,
-            Transport,
-        };
+        use crate::address::{Address, Transport};
         crate::block_on(async {
             let addr = Address::from(Transport::Launchd(Launchd::new("DBUS_LAUNCHD_SESSION_BUS_SOCKET")));
             addr.connect().await
@@ -1559,16 +1496,10 @@ mod p2p_tests {
     use futures_util::stream::TryStreamExt;
     use ntest::timeout;
     use test_log::test;
-    use zvariant::{
-        Endian,
-        NATIVE_ENDIAN,
-    };
+    use zvariant::{Endian, NATIVE_ENDIAN};
 
     use super::*;
-    use crate::{
-        AuthMechanism,
-        Guid,
-    };
+    use crate::{AuthMechanism, Guid};
 
     // Same numbered client and server are already paired up.
     async fn test_p2p(
@@ -1805,21 +1736,11 @@ mod p2p_tests {
     #[test]
     #[timeout(15000)]
     fn unix_p2p_cookie_auth() {
-        use std::fs::{
-            create_dir_all,
-            remove_file,
-            write,
-        };
-        use std::time::{
-            SystemTime as Time,
-            UNIX_EPOCH,
-        };
+        use std::fs::{create_dir_all, remove_file, write};
+        use std::time::{SystemTime as Time, UNIX_EPOCH};
         #[cfg(unix)]
         use std::{
-            fs::{
-                Permissions,
-                set_permissions,
-            },
+            fs::{Permissions, set_permissions},
             os::unix::fs::PermissionsExt,
         };
 

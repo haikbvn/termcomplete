@@ -2,23 +2,18 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Mutex;
 
-use fig_util::CHAT_BINARY_NAME;
 use thiserror::Error;
 use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::prelude::*;
-use tracing_subscriber::{
-    EnvFilter,
-    Registry,
-    fmt,
-};
+use tracing_subscriber::{EnvFilter, Registry, fmt};
 
 const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 const DEFAULT_FILTER: LevelFilter = LevelFilter::ERROR;
 
-static Q_LOG_LEVEL_GLOBAL: Mutex<Option<String>> = Mutex::new(None);
+static TCOMP_LOG_LEVEL_GLOBAL: Mutex<Option<String>> = Mutex::new(None);
 static MAX_LEVEL: Mutex<Option<LevelFilter>> = Mutex::new(None);
 static ENV_FILTER_RELOADABLE_HANDLE: Mutex<Option<tracing_subscriber::reload::Handle<EnvFilter, Registry>>> =
     Mutex::new(None);
@@ -66,7 +61,7 @@ pub fn initialize_logging<T: AsRef<Path>>(args: LogArgs<T>) -> Result<LogGuard, 
     let filter_layer = create_filter_layer();
     let (reloadable_filter_layer, reloadable_handle) = tracing_subscriber::reload::Layer::new(filter_layer);
     ENV_FILTER_RELOADABLE_HANDLE.lock().unwrap().replace(reloadable_handle);
-    let mut mcp_path = None;
+    let mcp_path: Option<std::path::PathBuf> = None;
 
     // First we construct the file logging layer if a file name was provided.
     let (file_layer, _file_guard) = match args.log_file_path {
@@ -75,9 +70,6 @@ pub fn initialize_logging<T: AsRef<Path>>(args: LogArgs<T>) -> Result<LogGuard, 
 
             // Make the log path parent directory if it doesn't exist.
             if let Some(parent) = log_path.parent() {
-                if log_path.ends_with(format!("{CHAT_BINARY_NAME}.log")) {
-                    mcp_path = Some(parent.to_path_buf());
-                }
                 std::fs::create_dir_all(parent)?;
             }
 
@@ -111,7 +103,7 @@ pub fn initialize_logging<T: AsRef<Path>>(args: LogArgs<T>) -> Result<LogGuard, 
             let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
 
             (Some(file_layer), Some(guard))
-        },
+        }
         None => (None, None),
     };
 
@@ -191,7 +183,7 @@ pub fn initialize_logging<T: AsRef<Path>>(args: LogArgs<T>) -> Result<LogGuard, 
 ///
 /// Returns a string identifying the current log level.
 pub fn get_log_level() -> String {
-    Q_LOG_LEVEL_GLOBAL.lock().unwrap().clone().unwrap_or_else(|| {
+    TCOMP_LOG_LEVEL_GLOBAL.lock().unwrap().clone().unwrap_or_else(|| {
         fig_os_shim::Env::new()
             .q_log_level()
             .unwrap_or_else(|_| DEFAULT_FILTER.to_string())
@@ -207,7 +199,7 @@ pub fn set_log_level(level: String) -> Result<String, Error> {
     info!("Setting log level to {level:?}");
 
     let old_level = get_log_level();
-    *Q_LOG_LEVEL_GLOBAL.lock().unwrap() = Some(level);
+    *TCOMP_LOG_LEVEL_GLOBAL.lock().unwrap() = Some(level);
 
     let filter_layer = create_filter_layer();
     *MAX_LEVEL.lock().unwrap() = filter_layer.max_level_hint();
@@ -235,14 +227,14 @@ pub fn get_log_level_max() -> LevelFilter {
             let filter_layer = create_filter_layer();
             *MAX_LEVEL.lock().unwrap() = filter_layer.max_level_hint();
             filter_layer.max_level_hint().unwrap_or(DEFAULT_FILTER)
-        },
+        }
     }
 }
 
 fn create_filter_layer() -> EnvFilter {
     let directive = Directive::from(DEFAULT_FILTER);
 
-    let log_level = Q_LOG_LEVEL_GLOBAL
+    let log_level = TCOMP_LOG_LEVEL_GLOBAL
         .lock()
         .unwrap()
         .clone()
@@ -261,12 +253,7 @@ mod tests {
     use std::fs::read_to_string;
     use std::time::Duration;
 
-    use tracing::{
-        debug,
-        error,
-        trace,
-        warn,
-    };
+    use tracing::{debug, error, trace, warn};
 
     use super::*;
 

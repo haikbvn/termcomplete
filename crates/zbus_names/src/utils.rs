@@ -35,7 +35,4 @@ macro_rules! impl_try_from {
     };
 }
 
-pub(crate) use {
-    impl_str_basic,
-    impl_try_from,
-};
+pub(crate) use {impl_str_basic, impl_try_from};

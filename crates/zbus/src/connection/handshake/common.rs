@@ -1,19 +1,9 @@
 use std::collections::VecDeque;
 
-use tracing::{
-    instrument,
-    trace,
-};
+use tracing::{instrument, trace};
 
-use super::{
-    AuthMechanism,
-    BoxedSplit,
-    Command,
-};
-use crate::{
-    Error,
-    Result,
-};
+use super::{AuthMechanism, BoxedSplit, Command};
+use crate::{Error, Result};
 
 // Common code for the client and server side of the handshake.
 #[derive(Debug)]

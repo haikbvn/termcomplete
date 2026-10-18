@@ -10,10 +10,7 @@ use tokio::net::TcpStream;
 use tokio::net::UnixStream;
 #[cfg(all(windows, not(feature = "tokio")))]
 use uds_windows::UnixStream;
-use zvariant::{
-    ObjectPath,
-    Str,
-};
+use zvariant::{ObjectPath, Str};
 
 #[cfg(feature = "p2p")]
 use crate::Guid;
@@ -23,11 +20,7 @@ use crate::connection::socket::BoxedSplit;
 use crate::names::WellKnownName;
 use crate::object_server::Interface;
 use crate::utils::block_on;
-use crate::{
-    AuthMechanism,
-    Error,
-    Result,
-};
+use crate::{AuthMechanism, Error, Result};
 
 /// A builder for [`zbus::blocking::Connection`].
 #[derive(Debug)]

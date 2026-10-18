@@ -1,10 +1,6 @@
 use std::io;
 
-use async_broadcast::{
-    Receiver,
-    Sender,
-    broadcast,
-};
+use async_broadcast::{Receiver, Sender, broadcast};
 
 use crate::Message;
 use crate::fdo::ConnectionCredentials;
@@ -116,10 +112,7 @@ async fn self_credentials() -> io::Result<ConnectionCredentials> {
 
     #[cfg(unix)]
     {
-        use nix::unistd::{
-            Gid,
-            Uid,
-        };
+        use nix::unistd::{Gid, Uid};
 
         creds = creds
             .set_unix_user_id(Uid::effective().into())

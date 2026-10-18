@@ -2,15 +2,9 @@ use std::future::Future;
 use std::pin::Pin;
 #[cfg(not(feature = "tokio"))]
 use std::sync::Arc;
-use std::task::{
-    Context,
-    Poll,
-};
+use std::task::{Context, Poll};
 #[cfg(feature = "tokio")]
-use std::{
-    future::pending,
-    marker::PhantomData,
-};
+use std::{future::pending, marker::PhantomData};
 
 #[cfg(not(feature = "tokio"))]
 use async_executor::Executor as AsyncExecutor;

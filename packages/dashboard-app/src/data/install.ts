@@ -11,7 +11,7 @@ const getBackupsDir = (): string => {
   if (backupsDir && home) {
     return backupsDir.replace(home, "~") + "/";
   } else {
-    return "~/.amazon-q.dotfiles.bak/";
+    return "~/.termcomplete.dotfiles.bak/";
   }
 };
 

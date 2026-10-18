@@ -1,18 +1,12 @@
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    BusName,
-    InterfaceName,
-};
+use zbus_names::{BusName, InterfaceName};
 use zvariant::ObjectPath;
 
 use crate::blocking::Connection;
 use crate::proxy::CacheProperties;
 pub use crate::proxy::ProxyDefault;
 use crate::utils::block_on;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 /// Builder for proxies.
 #[derive(Debug, Clone)]

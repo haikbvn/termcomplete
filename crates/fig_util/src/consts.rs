@@ -1,45 +1,44 @@
-pub const APP_BUNDLE_ID: &str = "com.amazon.codewhisperer";
-pub const APP_BUNDLE_NAME: &str = "Amazon Q.app";
+pub const APP_BUNDLE_ID: &str = "io.github.haikbvn.termcomplete";
+pub const APP_BUNDLE_NAME: &str = "Termcomplete.app";
 
 #[cfg(target_os = "macos")]
-pub const APP_PROCESS_NAME: &str = "q_desktop";
+pub const APP_PROCESS_NAME: &str = "tcomp-desktop";
 #[cfg(target_os = "linux")]
-pub const APP_PROCESS_NAME: &str = "q-desktop";
+pub const APP_PROCESS_NAME: &str = "tcomp-desktop";
 
 #[cfg(windows)]
 pub const APP_PROCESS_NAME: &str = "q_desktop.exe";
 
 /// The name configured under `"package.productName"` in the tauri.conf.json file.
-pub const TAURI_PRODUCT_NAME: &str = "q_desktop";
+pub const TAURI_PRODUCT_NAME: &str = "tcomp-desktop";
 
-pub const CLI_BINARY_NAME: &str = "q";
+pub const CLI_BINARY_NAME: &str = "tcomp";
 pub const CLI_BINARY_NAME_MINIMAL: &str = "q-minimal";
-pub const CHAT_BINARY_NAME: &str = "qchat";
-pub const PTY_BINARY_NAME: &str = "qterm";
+pub const PTY_BINARY_NAME: &str = "tcomp-term";
 
 pub const CLI_CRATE_NAME: &str = "q_cli";
 
-pub const URL_SCHEMA: &str = "q";
+pub const URL_SCHEMA: &str = "tcomp";
 
-pub const PRODUCT_NAME: &str = "Amazon Q";
+pub const PRODUCT_NAME: &str = "Termcomplete";
 
-pub const RUNTIME_DIR_NAME: &str = "cwrun";
+pub const RUNTIME_DIR_NAME: &str = "tcomp";
 
 /// Data directory name used in paths like ~/.local/share/{DATA_DIR_NAME}
 #[cfg(unix)]
-pub const DATA_DIR_NAME: &str = "amazon-q";
+pub const DATA_DIR_NAME: &str = "termcomplete";
 #[cfg(windows)]
 pub const DATA_DIR_NAME: &str = "AmazonQ";
 
 /// Backup directory name
-pub const BACKUP_DIR_NAME: &str = ".amazon-q.dotfiles.bak";
+pub const BACKUP_DIR_NAME: &str = ".termcomplete.dotfiles.bak";
 
-// These are the old "CodeWhisperer" branding, used anywhere we will not update to Amazon Q
+// These are the old "CodeWhisperer" branding, used anywhere we will not update to Termcomplete
 pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAMES: &[&str] = &["cw"];
 pub const OLD_PTY_BINARY_NAMES: &[&str] = &["cwterm"];
 
-pub const GITHUB_REPO_NAME: &str = "aws/amazon-q-developer-cli";
+pub const GITHUB_REPO_NAME: &str = "haikbvn/termcomplete";
 
 pub mod url {
     pub const USER_MANUAL: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html";
@@ -56,22 +55,22 @@ pub mod url {
 /// Build time env vars
 pub mod build {
     /// The target of the current build, e.g. "aarch64-unknown-linux-musl"
-    pub const TARGET_TRIPLE: Option<&str> = option_env!("AMAZON_Q_BUILD_TARGET_TRIPLE");
+    pub const TARGET_TRIPLE: Option<&str> = option_env!("TCOMP_BUILD_TARGET_TRIPLE");
 
     /// The variant of the current build
-    pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
+    pub const VARIANT: Option<&str> = option_env!("TCOMP_BUILD_VARIANT");
 
     /// A git full sha hash of the current build
-    pub const HASH: Option<&str> = option_env!("AMAZON_Q_BUILD_HASH");
+    pub const HASH: Option<&str> = option_env!("TCOMP_BUILD_HASH");
 
     /// The datetime in rfc3339 format of the current build
-    pub const DATETIME: Option<&str> = option_env!("AMAZON_Q_BUILD_DATETIME");
+    pub const DATETIME: Option<&str> = option_env!("TCOMP_BUILD_DATETIME");
 
     /// If `fish` tests should be skipped
-    pub const SKIP_FISH_TESTS: bool = option_env!("AMAZON_Q_BUILD_SKIP_FISH_TESTS").is_some();
+    pub const SKIP_FISH_TESTS: bool = option_env!("TCOMP_BUILD_SKIP_FISH_TESTS").is_some();
 
     /// If `shellcheck` tests should be skipped
-    pub const SKIP_SHELLCHECK_TESTS: bool = option_env!("AMAZON_Q_BUILD_SKIP_SHELLCHECK_TESTS").is_some();
+    pub const SKIP_SHELLCHECK_TESTS: bool = option_env!("TCOMP_BUILD_SKIP_SHELLCHECK_TESTS").is_some();
 }
 
 /// macOS specific constants
@@ -86,7 +85,7 @@ pub mod linux {
     pub const DESKTOP_ENTRY_NAME: &str = "amazon-q.desktop";
 
     /// Name of the deb package.
-    pub const PACKAGE_NAME: &str = "amazon-q";
+    pub const PACKAGE_NAME: &str = "termcomplete";
 
     /// The wm_class used for the application windows.
     pub const DESKTOP_APP_WM_CLASS: &str = "Amazon-q";
@@ -106,40 +105,40 @@ pub mod env_var {
 
     define_env_vars! {
         /// The UUID of the current parent qterm instance
-        QTERM_SESSION_ID = "QTERM_SESSION_ID",
+        TCOMP_PTY_SESSION_ID = "TCOMP_PTY_SESSION_ID",
 
         /// The current parent socket to connect to
-        Q_PARENT = "Q_PARENT",
+        TCOMP_PARENT = "TCOMP_PARENT",
 
-        /// Set the [`Q_PARENT`] parent socket to connect to
-        Q_SET_PARENT = "Q_SET_PARENT",
+        /// Set the [`TCOMP_PARENT`] parent socket to connect to
+        TCOMP_SET_PARENT = "TCOMP_SET_PARENT",
 
-        /// Guard for the [`Q_SET_PARENT`] check
-        Q_SET_PARENT_CHECK = "Q_SET_PARENT_CHECK",
+        /// Guard for the [`TCOMP_SET_PARENT`] check
+        TCOMP_SET_PARENT_CHECK = "TCOMP_SET_PARENT_CHECK",
 
         /// Set if qterm is running, contains the version
-        Q_TERM = "Q_TERM",
+        TCOMP_TERM = "TCOMP_TERM",
 
         /// Sets the current log level
-        Q_LOG_LEVEL = "Q_LOG_LEVEL",
+        TCOMP_LOG_LEVEL = "TCOMP_LOG_LEVEL",
 
         /// Overrides the ZDOTDIR environment variable
-        Q_ZDOTDIR = "Q_ZDOTDIR",
+        TCOMP_ZDOTDIR = "TCOMP_ZDOTDIR",
 
-        /// Indicates a process was launched by Amazon Q
-        PROCESS_LAUNCHED_BY_Q = "PROCESS_LAUNCHED_BY_Q",
+        /// Indicates a process was launched by Termcomplete
+        PROCESS_LAUNCHED_BY_TCOMP = "PROCESS_LAUNCHED_BY_TCOMP",
 
         /// The shell to use in qterm
-        Q_SHELL = "Q_SHELL",
+        TCOMP_SHELL = "TCOMP_SHELL",
 
         /// Indicates the user is debugging the shell
-        Q_DEBUG_SHELL = "Q_DEBUG_SHELL",
+        TCOMP_DEBUG_SHELL = "TCOMP_DEBUG_SHELL",
 
         /// Indicates the user is using zsh autosuggestions which disables Inline
-        Q_USING_ZSH_AUTOSUGGESTIONS = "Q_USING_ZSH_AUTOSUGGESTIONS",
+        TCOMP_USING_ZSH_AUTOSUGGESTIONS = "TCOMP_USING_ZSH_AUTOSUGGESTIONS",
 
         /// Overrides the path to the bundle metadata released with certain desktop builds.
-        Q_BUNDLE_METADATA_PATH = "Q_BUNDLE_METADATA_PATH"
+        TCOMP_BUNDLE_METADATA_PATH = "TCOMP_BUNDLE_METADATA_PATH"
     }
 }
 

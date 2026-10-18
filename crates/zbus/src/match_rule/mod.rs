@@ -1,35 +1,16 @@
 //! Bus match rule API.
 
-use std::fmt::{
-    Display,
-    Write,
-};
+use std::fmt::{Display, Write};
 use std::ops::Deref;
 
-use serde::{
-    Deserialize,
-    Serialize,
-    de,
-};
+use serde::{Deserialize, Serialize, de};
 use static_assertions::assert_impl_all;
 use zvariant::Structure;
 
 use crate::message::Type;
-use crate::names::{
-    BusName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
-use crate::zvariant::{
-    ObjectPath,
-    Str,
-    Type as VariantType,
-};
-use crate::{
-    Error,
-    Result,
-};
+use crate::names::{BusName, InterfaceName, MemberName, UniqueName};
+use crate::zvariant::{ObjectPath, Str, Type as VariantType};
+use crate::{Error, Result};
 
 mod builder;
 pub use builder::Builder;

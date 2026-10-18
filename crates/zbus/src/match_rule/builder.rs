@@ -2,21 +2,9 @@ use static_assertions::assert_impl_all;
 
 use crate::match_rule::PathSpec;
 use crate::message::Type;
-use crate::names::{
-    BusName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
-use crate::zvariant::{
-    ObjectPath,
-    Str,
-};
-use crate::{
-    Error,
-    MatchRule,
-    Result,
-};
+use crate::names::{BusName, InterfaceName, MemberName, UniqueName};
+use crate::zvariant::{ObjectPath, Str};
+use crate::{Error, MatchRule, Result};
 
 const MAX_ARGS: u8 = 64;
 

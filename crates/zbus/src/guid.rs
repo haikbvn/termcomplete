@@ -1,31 +1,13 @@
-use std::borrow::{
-    Borrow,
-    Cow,
-};
-use std::fmt::{
-    self,
-    Debug,
-    Display,
-    Formatter,
-};
+use std::borrow::{Borrow, Cow};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::repeat_with;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::time::{
-    SystemTime,
-    UNIX_EPOCH,
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::{
-    Deserialize,
-    Serialize,
-    de,
-};
+use serde::{Deserialize, Serialize, de};
 use static_assertions::assert_impl_all;
-use zvariant::{
-    Str,
-    Type,
-};
+use zvariant::{Str, Type};
 
 /// A D-Bus server GUID.
 ///

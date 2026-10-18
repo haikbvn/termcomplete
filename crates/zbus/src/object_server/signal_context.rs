@@ -1,11 +1,7 @@
 use zbus_names::BusName;
 
 use crate::zvariant::ObjectPath;
-use crate::{
-    Connection,
-    Error,
-    Result,
-};
+use crate::{Connection, Error, Result};
 
 /// A signal emission context.
 ///

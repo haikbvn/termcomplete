@@ -1,14 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-    "crates/*",
-    "crates/fig_desktop/fuzz",
-    "crates/macos-utils/accessibility-master/accessibility",
-    "crates/macos-utils/accessibility-master/accessibility-sys",
-    "crates/macos-utils/appkit-nsworkspace-bindings",
-    "tests/fig-api/fig-api-mock",
-    "tests/figterm2",
-]
+members = ["crates/alacritty_terminal", "crates/fig_desktop", "crates/fig_desktop_api", "crates/fig_input_method", "crates/fig_integrations", "crates/fig_ipc", "crates/fig_log", "crates/fig_os_shim", "crates/fig_proto", "crates/fig_remote_ipc", "crates/fig_settings", "crates/fig_test_macro", "crates/fig_test_utils", "crates/fig_util", "crates/figterm", "crates/macos-utils", "crates/q_cli", "crates/dbus", "crates/zbus", "crates/zbus_names", "crates/macos-utils/accessibility-master/accessibility", "crates/macos-utils/accessibility-master/accessibility-sys", "crates/macos-utils/appkit-nsworkspace-bindings"]
 default-members = ["crates/q_cli"]
 
 [workspace.package]
@@ -18,24 +10,17 @@ authors = [
     "Brandon Kiser (bskiser@amazon.com)",
 ]
 edition = "2024"
-homepage = "https://aws.amazon.com/q/"
+homepage = "https://github.com/haikbvn/termcomplete"
 publish = false
-version = "1.19.7"
+version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-amzn-codewhisperer-client = { path = "crates/amzn-codewhisperer-client" }
-amzn-codewhisperer-streaming-client = { path = "crates/amzn-codewhisperer-streaming-client" }
-amzn-consolas-client = { path = "crates/amzn-consolas-client" }
-amzn-qdeveloper-streaming-client = { path = "crates/amzn-qdeveloper-streaming-client" }
 anstream = "0.6.13"
 anyhow = "1.0.98"
 appkit-nsworkspace-bindings = { path = "crates/macos-utils/appkit-nsworkspace-bindings" }
 assert_cmd = "2.0.17" # This version is required for musl builds to succeed
 async-trait = "0.1.87"
-aws-smithy-runtime-api = "1.6.1"
-aws-smithy-types = "1.2.10"
-aws-types = "1.3.0"
 base64 = "0.22.1"
 block2 = "0.5.1"
 bytes = "1.10.1"
@@ -61,22 +46,14 @@ crossterm = { version = "0.28.1", features = ["event-stream", "events"] }
 dashmap = "6.0.1"
 dirs = "5.0.0"
 eyre = "0.6.8"
-fig_api_client = { path = "crates/fig_api_client" }
-fig_auth = { path = "crates/fig_auth" }
-fig_aws_common = { path = "crates/fig_aws_common" }
 fig_desktop_api = { path = "crates/fig_desktop_api" }
-fig_diagnostic = { path = "crates/fig_diagnostic" }
-fig_install = { path = "crates/fig_install" }
 fig_integrations = { path = "crates/fig_integrations" }
 fig_ipc = { path = "crates/fig_ipc" }
 fig_log = { path = "crates/fig_log" }
 fig_os_shim = { path = "crates/fig_os_shim" }
 fig_proto = { path = "crates/fig_proto" }
 fig_remote_ipc = { path = "crates/fig_remote_ipc" }
-fig_request = { path = "crates/fig_request" }
 fig_settings = { path = "crates/fig_settings" }
-fig_telemetry = { path = "crates/fig_telemetry" }
-fig_telemetry_core = { path = "crates/fig_telemetry_core" }
 fig_test_utils = { path = "crates/fig_test_utils" }
 fig_util = { path = "crates/fig_util" }
 flate2 = "1.1.1"
@@ -248,8 +225,8 @@ verbose_file_reads = "warn"
 zero_sized_map_values = "warn"
 
 [profile.release]
-debug = 1
-incremental = true
+debug = 0
+incremental = false
 lto = "off"
 
 [profile.dev.package.insta]
@@ -260,3 +237,7 @@ opt-level = 3
 
 [profile.dev.package.backtrace]
 opt-level = 3
+
+[profile.dev]
+debug = 0
+incremental = false

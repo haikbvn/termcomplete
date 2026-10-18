@@ -2,21 +2,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use event_listener::Event;
-use tracing::{
-    debug,
-    instrument,
-    trace,
-};
+use tracing::{debug, instrument, trace};
 
 use super::socket::ReadHalf;
 use crate::async_lock::Mutex;
 use crate::connection::MsgBroadcaster;
-use crate::{
-    Executor,
-    Message,
-    OwnedMatchRule,
-    Task,
-};
+use crate::{Executor, Message, OwnedMatchRule, Task};
 
 #[derive(Debug)]
 pub(crate) struct SocketReader {

@@ -101,10 +101,7 @@ pub use match_rule::Builder as MatchRuleBuilder;
 #[deprecated(since = "4.0.0", note = "Use `match_rule::PathSpec` instead")]
 #[doc(hidden)]
 pub use match_rule::PathSpec as MatchRulePathSpec;
-pub use match_rule::{
-    MatchRule,
-    OwnedMatchRule,
-};
+pub use match_rule::{MatchRule, OwnedMatchRule};
 
 pub mod proxy;
 #[deprecated(since = "4.0.0", note = "Use `proxy::Builder` instead")]
@@ -167,13 +164,7 @@ pub use connection::Socket;
 pub mod blocking;
 
 // Old names used for backwards compatibility
-pub use zbus_macros::{
-    DBusError,
-    dbus_interface,
-    dbus_proxy,
-    interface,
-    proxy,
-};
+pub use zbus_macros::{DBusError, dbus_interface, dbus_proxy, interface, proxy};
 
 // Required for the macros to function within this crate.
 extern crate self as zbus;
@@ -181,62 +172,31 @@ extern crate self as zbus;
 // Macro support module, not part of the public API.
 #[doc(hidden)]
 pub mod export {
-    pub use {
-        async_trait,
-        futures_core,
-        futures_util,
-        ordered_stream,
-        serde,
-        static_assertions,
-    };
+    pub use {async_trait, futures_core, futures_util, ordered_stream, serde, static_assertions};
 }
 
-pub use {
-    zbus_names as names,
-    zvariant,
-};
+pub use {zbus_names as names, zvariant};
 
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
     use std::sync::mpsc::channel;
-    use std::sync::{
-        Arc,
-        Condvar,
-        Mutex,
-    };
+    use std::sync::{Arc, Condvar, Mutex};
 
     use enumflags2::BitFlags;
     use event_listener::Event;
     use ntest::timeout;
     use test_log::test;
-    use tracing::{
-        debug,
-        instrument,
-        trace,
-    };
+    use tracing::{debug, instrument, trace};
     use zbus_names::UniqueName;
-    use zvariant::{
-        OwnedObjectPath,
-        OwnedValue,
-        Type,
-    };
+    use zvariant::{OwnedObjectPath, OwnedValue, Type};
 
-    use crate::blocking::{
-        self,
-        MessageIterator,
-    };
-    use crate::fdo::{
-        RequestNameFlags,
-        RequestNameReply,
-    };
+    use crate::blocking::{self, MessageIterator};
+    use crate::fdo::{RequestNameFlags, RequestNameReply};
     use crate::message::Message;
     use crate::object_server::SignalContext;
     use crate::utils::block_on;
-    use crate::{
-        Connection,
-        Result,
-    };
+    use crate::{Connection, Result};
 
     #[test]
     fn msg() {
@@ -593,10 +553,7 @@ mod tests {
         // with multiple out arguments, ending up with double parenthesis around the signature of
         // the return type and zbus only removing the outer `()` only and then it not matching the
         // signature we receive on the reply message.
-        use zvariant::{
-            ObjectPath,
-            Value,
-        };
+        use zvariant::{ObjectPath, Value};
 
         struct Secret;
         #[super::interface(name = "org.freedesktop.Secret.Service")]
@@ -727,10 +684,7 @@ mod tests {
     #[ignore]
     fn issue_81() {
         use zbus::proxy;
-        use zvariant::{
-            OwnedValue,
-            Type,
-        };
+        use zvariant::{OwnedValue, Type};
 
         #[derive(Debug, PartialEq, Eq, Clone, Type, OwnedValue, serde::Serialize, serde::Deserialize)]
         pub struct DbusPath {
@@ -1196,10 +1150,13 @@ mod tests {
                 let _conn = Builder::unix_stream(p0)
                     .server(guid)?
                     .p2p()
-                    .serve_at("/org/zbus/Issue813", Issue813Iface {
-                        event: server_event,
-                        call_count: 0,
-                    })?
+                    .serve_at(
+                        "/org/zbus/Issue813",
+                        Issue813Iface {
+                            event: server_event,
+                            call_count: 0,
+                        },
+                    )?
                     .name("org.zbus.Issue813")?
                     .build()
                     .await?;

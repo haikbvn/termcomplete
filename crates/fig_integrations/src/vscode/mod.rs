@@ -9,10 +9,7 @@ use tokio::process::Command;
 use tracing::error;
 
 use crate::error::Result;
-use crate::{
-    Error,
-    Integration,
-};
+use crate::{Error, Integration};
 
 const OLD_EXTENSION_PREFIX: &str = "withfig.fig-";
 const EXTENSION_PREFIX: &str = "amazonwebservices.codewhisperer-for-command-line-companion";
@@ -110,7 +107,7 @@ pub fn variants_installed() -> Vec<VSCodeVariant> {
         .collect()
 }
 
-/// Determines if the VSCode extension is installed by checking for the Amazon Q extension name in
+/// Determines if the VSCode extension is installed by checking for the Termcomplete extension name in
 /// the stdout of `code --list-extensions --show-versions`.
 fn is_installed_from_stdout(stdout: impl AsRef<[u8]>) -> bool {
     let extension_name = format!("{EXTENSION_PREFIX}@{EXTENSION_VERSION}");

@@ -8,14 +8,11 @@ use macos_utils::url::path_for_application;
 use serde::Deserialize;
 
 use crate::error::Result;
-use crate::{
-    Error,
-    Integration,
-};
+use crate::{Error, Integration};
 
 const PLUGIN_PREFIX: &str = "q-for-command-line-companion";
 
-/// Version of the Amazon Q Intellij plugin. This should match the version in
+/// Version of the Termcomplete Intellij plugin. This should match the version in
 /// [build.gradle](../../../../extensions/jetbrains/build.gradle).
 const PLUGIN_VERSION: &str = "1.0.4";
 
@@ -24,7 +21,7 @@ const OLD_PLUGIN_SLUGS: [&str; 2] = ["codewhisperer-for-command-line-companion",
 
 static PLUGIN_CONTENTS: &[u8] = include_bytes!("instrumented-codewhisperer-for-command-line-companion-1.0.4.jar");
 
-/// Returns the identifier of the plugin - i.e., the directory name of the Amazon Q plugin stored
+/// Returns the identifier of the plugin - i.e., the directory name of the Termcomplete plugin stored
 /// under the Intellij `plugins/` directory.
 fn plugin_slug() -> String {
     format!("{PLUGIN_PREFIX}-{PLUGIN_VERSION}")

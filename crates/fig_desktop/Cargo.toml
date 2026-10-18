@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-authors = ["Amazon Q Devs"]
+authors = ["Termcomplete Devs"]
 edition.workspace = true
 homepage = "https://aws.amazon.com/codewhisperer"
 publish.workspace = true
@@ -23,7 +23,7 @@ icon = [
     "./icons/512x512.png",
     "./icons/64x64.png",
 ]
-identifier = "com.amazon.codewhisperer"
+identifier = "io.github.haikbvn.termcomplete"
 resource = "./autocomplete-icons/*"
 
 [features]
@@ -41,25 +41,20 @@ camino.workspace = true
 cfg-if.workspace = true
 clap.workspace = true
 dashmap.workspace = true
-fig_api_client.workspace = true
-fig_auth.workspace = true
 fig_desktop_api.workspace = true
-fig_install.workspace = true
 fig_integrations = { workspace = true, features = ["dispatch"] }
 fig_ipc.workspace = true
 fig_log.workspace = true
 fig_os_shim.workspace = true
 fig_proto.workspace = true
 fig_remote_ipc.workspace = true
-fig_request.workspace = true
 fig_settings.workspace = true
-fig_telemetry.workspace = true
 fig_util.workspace = true
 flume.workspace = true
 fnv = "1.0.7"
 futures.workspace = true
 http.workspace = true
-image = "0.25.6"
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg", "gif", "ico", "bmp", "webp", "tiff"] }
 infer = "0.19.0"
 keyboard-types = "0.8.0"
 mime = "0.3.17"
@@ -140,4 +135,8 @@ objc2-foundation.workspace = true
 system-configuration = "0.6.0"
 
 [build-dependencies]
-image = "0.25.6"
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg", "gif", "ico", "bmp", "webp", "tiff"] }
+
+[[bin]]
+name = "tcomp-desktop"
+path = "src/main.rs"

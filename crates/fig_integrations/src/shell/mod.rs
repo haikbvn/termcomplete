@@ -1,40 +1,17 @@
 use std::fs::File;
-use std::io::{
-    ErrorKind,
-    Write,
-};
+use std::io::{ErrorKind, Write};
 use std::path::PathBuf;
 
 use async_trait::async_trait;
 use cfg_if::cfg_if;
 use clap::ValueEnum;
 use fig_os_shim::Env;
-use fig_util::{
-    CLI_BINARY_NAME,
-    PRODUCT_NAME,
-    PTY_BINARY_NAME,
-    Shell,
-    directories,
-};
-use regex::{
-    Regex,
-    RegexSet,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use fig_util::{CLI_BINARY_NAME, PRODUCT_NAME, PTY_BINARY_NAME, Shell, directories};
+use regex::{Regex, RegexSet};
+use serde::{Deserialize, Serialize};
 
-use crate::error::{
-    ErrorExt,
-    Result,
-};
-use crate::{
-    Error,
-    FileIntegration,
-    Integration,
-    backup_file,
-};
+use crate::error::{ErrorExt, Result};
+use crate::{Error, FileIntegration, Integration, backup_file};
 
 pub mod inline_shell_completion_plugin {
     pub const ZSH_SCRIPT: &str = concat!(
@@ -156,7 +133,7 @@ impl ShellExt for Shell {
                         }) as Box<dyn ShellIntegration>
                     })
                     .collect()
-            },
+            }
             Shell::Zsh => vec![".zshrc", ".zprofile"]
                 .into_iter()
                 .map(|filename| {
@@ -183,7 +160,7 @@ impl ShellExt for Shell {
                         path: fish_config_dir.join("99_fig_post.fish"),
                     }),
                 ]
-            },
+            }
             Shell::Nu => vec![],
         };
 
@@ -198,26 +175,26 @@ impl ShellExt for Shell {
             (Shell::Zsh, When::Post) => include_str!("scripts/post.zsh"),
             (Shell::Bash, When::Pre) => {
                 concat!(
-                    "function __fig_source_bash_preexec() {\n",
+                    "function __tcomp_source_bash_preexec() {\n",
                     include_str!("scripts/bash-preexec.sh"),
                     "}\n",
-                    "__fig_source_bash_preexec\n",
+                    "__tcomp_source_bash_preexec\n",
                     "# shellcheck disable=SC2329\n",
                     "function __bp_adjust_histcontrol() { :; }\n",
                     include_str!("scripts/pre.sh")
                 )
-            },
+            }
             (Shell::Bash, When::Post) => {
                 concat!(
-                    "function __fig_source_bash_preexec() {\n",
+                    "function __tcomp_source_bash_preexec() {\n",
                     include_str!("scripts/bash-preexec.sh"),
                     "}\n",
-                    "__fig_source_bash_preexec\n",
+                    "__tcomp_source_bash_preexec\n",
                     "# shellcheck disable=SC2329\n",
                     "function __bp_adjust_histcontrol() { :; }\n",
                     include_str!("scripts/post.bash")
                 )
-            },
+            }
             (Shell::Nu, When::Pre) => include_str!("scripts/pre.nu"),
             (Shell::Nu, When::Post) => include_str!("scripts/post.nu"),
         };
@@ -307,9 +284,9 @@ impl ShellScriptShellIntegration {
             } else {
                 let add_to_path_line = match self.shell {
                     Shell::Bash | Shell::Zsh => indoc::indoc! {r#"
-                        _Q_LOCAL_BIN="$HOME/.local/bin"
-                        [[ ":$PATH:" != *":$_Q_LOCAL_BIN:"* ]] && PATH="${PATH:+"$PATH:"}$_Q_LOCAL_BIN"
-                        unset _Q_LOCAL_BIN
+                        _TCOMP_LOCAL_BIN="$HOME/.local/bin"
+                        [[ ":$PATH:" != *":$_TCOMP_LOCAL_BIN:"* ]] && PATH="${PATH:+"$PATH:"}$_TCOMP_LOCAL_BIN"
+                        unset _TCOMP_LOCAL_BIN
                     "#},
                     Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
                     Shell::Nu => "",
@@ -430,51 +407,9 @@ impl DotfileShellIntegration {
         .into()
     }
 
-    fn legacy_regexes(&self, when: When) -> Result<RegexSet> {
-        let shell = self.shell;
-
-        let eval_line = match shell {
-            Shell::Fish => format!("eval ({CLI_BINARY_NAME} init {shell} {when} | string split0)"),
-            _ => format!("eval \"$({CLI_BINARY_NAME} init {shell} {when})\""),
-        };
-
-        let old_eval_source = match when {
-            When::Pre => match self.shell {
-                Shell::Fish => format!("set -Ua fish_user_paths $HOME/.local/bin\n{eval_line}"),
-                _ => format!("export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{eval_line}"),
-            },
-            When::Post => eval_line,
-        };
-
-        let old_file_regex = match when {
-            When::Pre => r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?",
-            When::Post => r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?",
-        };
-        let old_eval_regex = format!(
-            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
-            regex::escape(&DotfileShellIntegration::legacy_description(when)),
-            regex::escape(&old_eval_source),
-        );
-        let old_source_regex_1 = format!(
-            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
-            regex::escape(&DotfileShellIntegration::legacy_description(when)),
-            regex::escape(&self.legacy_source_text_1(when)?),
-        );
-        let old_source_regex_2 = format!(
-            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
-            regex::escape(&DotfileShellIntegration::legacy_description(when)),
-            regex::escape(&self.legacy_source_text_2(when)?),
-        );
-
-        let old_brand_regex = self.old_brand_regex(when)?;
-
-        Ok(RegexSet::new([
-            old_file_regex,
-            &old_eval_regex,
-            &old_source_regex_1,
-            &old_source_regex_2,
-            &old_brand_regex,
-        ])?)
+    fn legacy_regexes(&self, _when: When) -> Result<RegexSet> {
+        // The fork owns only its own integration. Never migrate or remove Fig/Q hooks.
+        Ok(RegexSet::empty())
     }
 
     fn legacy_source_text_1(&self, when: When) -> Result<String> {
@@ -706,10 +641,10 @@ impl Integration for DotfileShellIntegration {
                     .unwrap()
                     .replace_all(&contents, "")
                     .into()
-            },
+            }
             Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => {
                 return Err(Error::FileDoesNotExist(dotfile.into()));
-            },
+            }
             Err(err) => return Err(err),
         };
 
@@ -734,7 +669,7 @@ impl Integration for DotfileShellIntegration {
             Err(Error::LegacyInstallation(_)) => {
                 self.install_inner().await?;
                 Ok(())
-            },
+            }
             Err(err) => Err(err),
         }
     }
@@ -770,16 +705,10 @@ fn split_shebang(contents: &str) -> (&str, &str) {
 #[cfg(test)]
 mod test {
     use std::io::Write;
-    use std::process::{
-        Command,
-        Stdio,
-    };
+    use std::process::{Command, Stdio};
 
     use fig_util::build::SKIP_SHELLCHECK_TESTS;
-    use fig_util::directories::{
-        home_dir,
-        old_fig_data_dir,
-    };
+    use fig_util::directories::{home_dir, old_fig_data_dir};
 
     use super::*;
 

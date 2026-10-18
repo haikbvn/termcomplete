@@ -4,31 +4,18 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    ErrorName,
-    InterfaceName,
-    MemberName,
-};
-use zvariant::{
-    Endian,
-    serialized,
-};
+use zbus_names::{ErrorName, InterfaceName, MemberName};
+use zvariant::{Endian, serialized};
 
 use crate::utils::padding_for_8_bytes;
 use crate::zvariant::ObjectPath;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 mod builder;
 pub use builder::Builder;
 
 mod field;
-pub(crate) use field::{
-    Field,
-    FieldCode,
-};
+pub(crate) use field::{Field, FieldCode};
 
 mod fields;
 pub(crate) use fields::Fields;
@@ -39,14 +26,7 @@ pub use body::Body;
 
 pub(crate) mod header;
 use header::MIN_MESSAGE_SIZE;
-pub use header::{
-    EndianSig,
-    Flags,
-    Header,
-    NATIVE_ENDIAN_SIG,
-    PrimaryHeader,
-    Type,
-};
+pub use header::{EndianSig, Flags, Header, NATIVE_ENDIAN_SIG, PrimaryHeader, Type};
 
 /// A position in the stream of [`Message`] objects received by a single [`zbus::Connection`].
 ///
@@ -384,10 +364,7 @@ impl fmt::Display for Message {
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]
-    use std::os::fd::{
-        AsFd,
-        AsRawFd,
-    };
+    use std::os::fd::{AsFd, AsRawFd};
 
     use test_log::test;
     #[cfg(unix)]

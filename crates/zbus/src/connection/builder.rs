@@ -1,8 +1,4 @@
-use std::collections::{
-    HashMap,
-    HashSet,
-    VecDeque,
-};
+use std::collections::{HashMap, HashSet, VecDeque};
 #[cfg(not(feature = "tokio"))]
 use std::net::TcpStream;
 #[cfg(all(unix, not(feature = "tokio")))]
@@ -23,41 +19,14 @@ use tokio_vsock::VsockStream;
 use uds_windows::UnixStream;
 #[cfg(all(feature = "vsock", not(feature = "tokio")))]
 use vsock::VsockStream;
-use zvariant::{
-    ObjectPath,
-    Str,
-};
+use zvariant::{ObjectPath, Str};
 
-use super::handshake::{
-    AuthMechanism,
-    Authenticated,
-};
-use super::socket::{
-    BoxedSplit,
-    ReadHalf,
-    Split,
-    WriteHalf,
-};
-use crate::address::{
-    self,
-    Address,
-};
-use crate::names::{
-    InterfaceName,
-    WellKnownName,
-};
-use crate::object_server::{
-    ArcInterface,
-    Interface,
-};
-use crate::{
-    Connection,
-    Error,
-    Executor,
-    Guid,
-    OwnedGuid,
-    Result,
-};
+use super::handshake::{AuthMechanism, Authenticated};
+use super::socket::{BoxedSplit, ReadHalf, Split, WriteHalf};
+use crate::address::{self, Address};
+use crate::names::{InterfaceName, WellKnownName};
+use crate::object_server::{ArcInterface, Interface};
+use crate::{Connection, Error, Executor, Guid, OwnedGuid, Result};
 
 const DEFAULT_MAX_QUEUED: usize = 64;
 

@@ -5,48 +5,18 @@
 
 use std::collections::HashMap;
 
-use enumflags2::{
-    BitFlags,
-    bitflags,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use serde_repr::{
-    Deserialize_repr,
-    Serialize_repr,
-};
+use enumflags2::{BitFlags, bitflags};
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use static_assertions::assert_impl_all;
 use zbus_names::{
-    BusName,
-    InterfaceName,
-    OwnedBusName,
-    OwnedInterfaceName,
-    OwnedUniqueName,
-    UniqueName,
-    WellKnownName,
+    BusName, InterfaceName, OwnedBusName, OwnedInterfaceName, OwnedUniqueName, UniqueName, WellKnownName,
 };
-use zvariant::{
-    DeserializeDict,
-    ObjectPath,
-    Optional,
-    OwnedObjectPath,
-    OwnedValue,
-    SerializeDict,
-    Type,
-    Value,
-};
+use zvariant::{DeserializeDict, ObjectPath, Optional, OwnedObjectPath, OwnedValue, SerializeDict, Type, Value};
 
 use crate::message::Header;
 use crate::object_server::SignalContext;
-use crate::{
-    DBusError,
-    ObjectServer,
-    OwnedGuid,
-    interface,
-    proxy,
-};
+use crate::{DBusError, ObjectServer, OwnedGuid, interface, proxy};
 
 #[rustfmt::skip]
 macro_rules! gen_introspectable_proxy {
@@ -486,7 +456,7 @@ pub enum RequestNameFlags {
     /// [`AllowReplacement`].
     ///
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    ReplaceExisting  = 0x02,
+    ReplaceExisting = 0x02,
     /// Without this flag, if an application requests a name that is already owned, the
     /// application will be placed in a queue to own the name when the current owner gives it
     /// up. If this flag is given, the application will not be placed in the queue; the
@@ -494,7 +464,7 @@ pub enum RequestNameFlags {
     /// application is replaced as name owner; by default the application moves back into the
     /// waiting queue, unless this flag was provided when the application became the name
     /// owner.
-    DoNotQueue       = 0x04,
+    DoNotQueue = 0x04,
 }
 
 assert_impl_all!(RequestNameFlags: Send, Sync, Unpin);
@@ -519,7 +489,7 @@ pub enum RequestNameReply {
     /// [`DoNotQueue`]: enum.RequestNameFlags.html#variant.DoNotQueue
     /// [`ReplaceExisting`]: enum.RequestNameFlags.html#variant.ReplaceExisting
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    InQueue      = 0x02,
+    InQueue = 0x02,
     /// The name already had an owner, [`DoNotQueue`] was specified, and either
     /// [`AllowReplacement`] was not specified by the current owner, or [`ReplaceExisting`] was
     /// not specified by the requesting application.
@@ -527,7 +497,7 @@ pub enum RequestNameReply {
     /// [`DoNotQueue`]: enum.RequestNameFlags.html#variant.DoNotQueue
     /// [`ReplaceExisting`]: enum.RequestNameFlags.html#variant.ReplaceExisting
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    Exists       = 0x03,
+    Exists = 0x03,
     /// The application trying to request ownership of a name is already the owner of it.
     AlreadyOwner = 0x04,
 }
@@ -544,12 +514,12 @@ pub enum ReleaseNameReply {
     /// owner of the name, and the name is now unused or taken by somebody waiting in the queue for
     /// the name, or the caller was waiting in the queue for the name and has now been removed from
     /// the queue.
-    Released    = 0x01,
+    Released = 0x01,
     /// The given name does not exist on this bus.
     NonExistent = 0x02,
     /// The caller was not the primary owner of this name, and was also not waiting in the queue to
     /// own this name.
-    NotOwner    = 0x03,
+    NotOwner = 0x03,
 }
 
 assert_impl_all!(ReleaseNameReply: Send, Sync, Unpin);
@@ -1007,11 +977,7 @@ mod tests {
     use zbus_names::WellKnownName;
 
     use crate::message::Message;
-    use crate::{
-        DBusError,
-        Error,
-        fdo,
-    };
+    use crate::{DBusError, Error, fdo};
 
     #[test]
     fn error_from_zerror() {

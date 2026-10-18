@@ -3,17 +3,11 @@
 //! This module provides the trasport information for D-Bus addresses.
 
 use std::collections::HashMap;
-use std::fmt::{
-    Display,
-    Formatter,
-};
+use std::fmt::{Display, Formatter};
 #[cfg(not(feature = "tokio"))]
 use std::net::TcpStream;
 #[cfg(unix)]
-use std::os::unix::net::{
-    SocketAddr,
-    UnixStream,
-};
+use std::os::unix::net::{SocketAddr, UnixStream};
 use std::str::from_utf8_unchecked;
 
 #[cfg(not(feature = "tokio"))]
@@ -29,28 +23,16 @@ use vsock::VsockStream;
 
 #[cfg(windows)]
 use crate::win32::autolaunch_bus_address;
-use crate::{
-    Error,
-    Result,
-};
+use crate::{Error, Result};
 
 mod unix;
-pub use unix::{
-    Unix,
-    UnixSocket,
-};
+pub use unix::{Unix, UnixSocket};
 mod tcp;
-pub use tcp::{
-    Tcp,
-    TcpTransportFamily,
-};
+pub use tcp::{Tcp, TcpTransportFamily};
 #[cfg(windows)]
 mod autolaunch;
 #[cfg(windows)]
-pub use autolaunch::{
-    Autolaunch,
-    AutolaunchScope,
-};
+pub use autolaunch::{Autolaunch, AutolaunchScope};
 #[cfg(target_os = "macos")]
 mod launchd;
 #[cfg(target_os = "macos")]

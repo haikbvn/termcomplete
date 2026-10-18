@@ -1,8 +1,5 @@
 #[cfg(feature = "tokio-vsock")]
-use super::{
-    Socket,
-    Split,
-};
+use super::{Socket, Split};
 
 #[cfg(all(feature = "vsock", not(feature = "tokio")))]
 #[async_trait::async_trait]
@@ -68,10 +65,7 @@ impl Socket for tokio_vsock::VsockStream {
 #[async_trait::async_trait]
 impl super::ReadHalf for tokio_vsock::ReadHalf {
     async fn recvmsg(&mut self, buf: &mut [u8]) -> super::RecvmsgResult {
-        use tokio::io::{
-            AsyncReadExt,
-            ReadBuf,
-        };
+        use tokio::io::{AsyncReadExt, ReadBuf};
 
         let mut read_buf = ReadBuf::new(buf);
         self.read_buf(&mut read_buf).await.map(|_| {

@@ -1,39 +1,20 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::sync::{
-    Arc,
-    Weak,
-};
+use std::sync::{Arc, Weak};
 
-use fig_os_shim::{
-    EnvProvider,
-    FsProvider,
-    SysInfoProvider,
-};
-use fig_util::directories::{
-    DirectoryError,
-    home_dir_ctx,
-};
+use fig_os_shim::{EnvProvider, FsProvider, SysInfoProvider};
+use fig_util::directories::{DirectoryError, home_dir_ctx};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
-use tokio::fs::{
-    File,
-    OpenOptions,
-};
+use tokio::fs::{File, OpenOptions};
 use tokio::io::BufReader;
 use tokio::sync::Mutex;
 use tokio_util::compat::TokioAsyncReadCompatExt;
-use tracing::{
-    debug,
-    error,
-};
+use tracing::{debug, error};
 use zbus::proxy;
 use zbus::zvariant::OwnedValue;
 
@@ -48,7 +29,7 @@ const LEGACY_EXTENSION_UUID: &str = "amazon-q-for-cli-legacy-gnome-integration@a
 /// Extension uuid for GNOME Shell v45 and after.
 const MODERN_EXTENSION_UUID: &str = "amazon-q-for-cli-gnome-integration@aws.amazon.com";
 
-/// Represents the installation status for the Amazon Q CLI GNOME Shell extension.
+/// Represents the installation status for the Termcomplete CLI GNOME Shell extension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExtensionInstallationStatus {
     /// The GNOME Shell process is not running.
@@ -148,7 +129,7 @@ pub fn local_extension_directory<Ctx: FsProvider + EnvProvider>(
         .join(uuid))
 }
 
-/// Gets the installation status for the Amazon Q CLI GNOME Shell extension.
+/// Gets the installation status for the Termcomplete CLI GNOME Shell extension.
 ///
 /// If `expected_version` is [Option::Some], then an additional version check is applied, in which
 /// case [ExtensionInstallationStatus::UnexpectedVersion] may be returned.
@@ -223,7 +204,7 @@ where
     }
 }
 
-/// Provides an accessible interface to retrieving info about the Amazon Q GNOME Shell Extension.
+/// Provides an accessible interface to retrieving info about the Termcomplete GNOME Shell Extension.
 ///
 /// Note that the real implementation uses the D-Bus API for retrieving info and performing
 /// actions. Therefore, in contexts where the D-Bus session bus cannot be accessed (e.g. in Debian
@@ -234,10 +215,7 @@ pub struct ShellExtensions<Ctx> {
 }
 
 mod inner {
-    use std::sync::{
-        Arc,
-        Weak,
-    };
+    use std::sync::{Arc, Weak};
 
     use tokio::sync::Mutex;
 
@@ -315,7 +293,7 @@ where
         }
     }
 
-    /// Returns the UUID (ie, extension name) of the Amazon Q extension intended for the
+    /// Returns the UUID (ie, extension name) of the Termcomplete extension intended for the
     /// current system.
     pub async fn extension_uuid(&self) -> Result<String, ExtensionsError> {
         if self.gnome_shell_version().await?.major >= 45 {
@@ -331,7 +309,7 @@ where
         local_extension_directory(self.ctx().await?.as_ref(), &uuid)
     }
 
-    /// Uninstall the currently installed Amazon Q extension. Returns a bool indicating
+    /// Uninstall the currently installed Termcomplete extension. Returns a bool indicating
     /// whether or not the extension was uninstalled.
     ///
     /// Note that this means Ok(false) is returned in the case where the extension was
@@ -451,7 +429,7 @@ where
         )? as u32)
     }
 
-    /// Returns a bool indicating whether or not the Amazon Q extension was successfully enabled.
+    /// Returns a bool indicating whether or not the Termcomplete extension was successfully enabled.
     ///
     /// Return value behavior:
     /// - Extension not installed -> `Ok(false)`
@@ -715,10 +693,10 @@ mod tests {
             let metadata = r#"
             {
               "uuid": "amazon-q-for-cli-legacy-gnome-integration@aws.amazon.com",
-              "name": "Amazon Q for CLI GNOME Integration",
+              "name": "Termcomplete for CLI GNOME Integration",
               "url": "https://github.com/aws",
               "version": 1,
-              "description": "Integrates Amazon Q for CLI with GNOME Shell prior to v45",
+              "description": "Integrates Termcomplete for CLI with GNOME Shell prior to v45",
               "gettext-domain": "amazon-q-for-cli-legacy-gnome-integration",
               "settings-schema": "org.gnome.shell.extensions.amazon-q-for-cli-legacy-gnome-integration",
               "shell-version": ["41", "42", "43", "44"]
@@ -800,9 +778,10 @@ mod tests {
                 .unwrap();
 
             // Then
-            assert_eq!(status, ExtensionInstallationStatus::UnexpectedVersion {
-                installed_version: 1
-            });
+            assert_eq!(
+                status,
+                ExtensionInstallationStatus::UnexpectedVersion { installed_version: 1 }
+            );
         }
 
         #[tokio::test]
@@ -824,9 +803,10 @@ mod tests {
                 .unwrap();
 
             // Then
-            assert_eq!(status, ExtensionInstallationStatus::UnexpectedVersion {
-                installed_version
-            });
+            assert_eq!(
+                status,
+                ExtensionInstallationStatus::UnexpectedVersion { installed_version }
+            );
         }
 
         #[tokio::test]

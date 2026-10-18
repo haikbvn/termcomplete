@@ -12,7 +12,7 @@ const csp: Record<string, string> = {
   // blob: is needed for loading dev specs
   "script-src": "'self' spec: blob:",
   "style-src": "'self' spec:",
-  "img-src": "'self' data: fig: icon: https:",
+  "img-src": "'self' data: fig: icon: spec: https:",
   "connect-src": "'self' spec: api:",
   "object-src": "'none'",
   "frame-src": "'none'",

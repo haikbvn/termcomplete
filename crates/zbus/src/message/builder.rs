@@ -1,49 +1,19 @@
-use std::io::{
-    Cursor,
-    Write,
-};
+use std::io::{Cursor, Write};
 use std::sync::Arc;
 
 use enumflags2::BitFlags;
-use zbus_names::{
-    BusName,
-    ErrorName,
-    InterfaceName,
-    MemberName,
-    UniqueName,
-};
+use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
 #[cfg(unix)]
 use zvariant::OwnedFd;
-use zvariant::{
-    Endian,
-    serialized,
-};
+use zvariant::{Endian, serialized};
 
 use crate::message::fields::QuickFields;
 use crate::message::header::MAX_MESSAGE_SIZE;
-use crate::message::{
-    Field,
-    FieldCode,
-    Fields,
-    Flags,
-    Header,
-    Message,
-    PrimaryHeader,
-    Sequence,
-    Type,
-};
+use crate::message::{Field, FieldCode, Fields, Flags, Header, Message, PrimaryHeader, Sequence, Type};
 use crate::utils::padding_for_8_bytes;
 use crate::zvariant::serialized::Context;
-use crate::zvariant::{
-    DynamicType,
-    ObjectPath,
-    Signature,
-};
-use crate::{
-    EndianSig,
-    Error,
-    Result,
-};
+use crate::zvariant::{DynamicType, ObjectPath, Signature};
+use crate::{EndianSig, Error, Result};
 
 #[cfg(unix)]
 type BuildGenericResult = Vec<OwnedFd>;

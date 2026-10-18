@@ -1,27 +1,13 @@
 use std::convert::Infallible;
 use std::sync::Arc;
-use std::{
-    error,
-    fmt,
-    io,
-};
+use std::{error, fmt, io};
 
 use static_assertions::assert_impl_all;
-use zbus_names::{
-    Error as NamesError,
-    InterfaceName,
-    OwnedErrorName,
-};
-use zvariant::{
-    Error as VariantError,
-    ObjectPath,
-};
+use zbus_names::{Error as NamesError, InterfaceName, OwnedErrorName};
+use zvariant::{Error as VariantError, ObjectPath};
 
 use crate::fdo;
-use crate::message::{
-    Message,
-    Type,
-};
+use crate::message::{Message, Type};
 
 /// The error type for `zbus`.
 ///

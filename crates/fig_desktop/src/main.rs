@@ -1,7 +1,7 @@
 mod cli;
 mod event;
 // mod figterm;
-mod auth_watcher;
+
 mod file_watcher;
 mod install;
 mod local_ipc;
@@ -11,63 +11,31 @@ pub mod protocol;
 mod remote_ipc;
 mod request;
 mod tray;
-mod update;
+
 mod utils;
 mod webview;
 
 use std::path::Path;
 use std::process::ExitCode;
-use std::sync::{
-    Arc,
-    RwLock,
-};
+use std::sync::{Arc, RwLock};
 
 use clap::Parser;
 use event::Event;
-use fig_log::{
-    LogArgs,
-    initialize_logging,
-};
+use fig_log::{LogArgs, initialize_logging};
 use fig_os_shim::Context;
-use fig_util::consts::{
-    APP_PROCESS_NAME,
-    PRODUCT_NAME,
-};
-use fig_util::{
-    URL_SCHEMA,
-    directories,
-};
+use fig_util::consts::{APP_PROCESS_NAME, PRODUCT_NAME};
+use fig_util::{URL_SCHEMA, directories};
 use platform::PlatformState;
-use sysinfo::{
-    ProcessRefreshKind,
-    RefreshKind,
-    System,
-    get_current_pid,
-};
+use sysinfo::{ProcessRefreshKind, RefreshKind, System, get_current_pid};
 use tao::event_loop::{
-    EventLoop as WryEventLoop,
-    EventLoopProxy as WryEventLoopProxy,
-    EventLoopWindowTarget as WryEventLoopWindowTarget,
+    EventLoop as WryEventLoop, EventLoopProxy as WryEventLoopProxy, EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
-use tracing::{
-    error,
-    warn,
-};
+use tracing::{error, warn};
 use url::Url;
 use webview::notification::WebviewNotificationsState;
-pub use webview::{
-    AUTOCOMPLETE_ID,
-    AUTOCOMPLETE_WINDOW_TITLE,
-    DASHBOARD_ID,
-};
+pub use webview::{AUTOCOMPLETE_ID, AUTOCOMPLETE_WINDOW_TITLE, DASHBOARD_ID};
 use webview::{
-    AutocompleteOptions,
-    DashboardOptions,
-    WebviewManager,
-    autocomplete,
-    build_autocomplete,
-    build_dashboard,
-    dashboard,
+    AutocompleteOptions, DashboardOptions, WebviewManager, autocomplete, build_autocomplete, build_dashboard, dashboard,
 };
 
 // #[global_allocator]
@@ -99,11 +67,6 @@ async fn main() -> ExitCode {
     })
     .expect("Failed to init logging");
 
-    fig_telemetry::init_global_telemetry_emitter();
-
-    #[cfg(target_os = "macos")]
-    install::migrate_data_dir().await;
-
     if let Err(err) = fig_settings::settings::init_global() {
         error!(%err, "failed to init global settings");
     }
@@ -123,7 +86,7 @@ async fn main() -> ExitCode {
                 if let Some(exit_code) = allow_multiple_running_check(current_pid, cli.kill_old, page.clone()).await {
                     return exit_code;
                 }
-            },
+            }
             Err(err) => warn!(%err, "Failed to get pid"),
         }
     }
@@ -145,12 +108,14 @@ async fn main() -> ExitCode {
     }
 
     let ctx = Context::new();
-    install::run_install(Arc::clone(&ctx), cli.ignore_immediate_update).await;
+    if !cli.no_install {
+        install::run_install(Arc::clone(&ctx), cli.ignore_immediate_update).await;
+    }
 
     #[cfg(target_os = "linux")]
     {
         match fig_os_shim::Env::new().q_backend().ok().as_deref() {
-            Some("default") => {},
+            Some("default") => {}
             // SAFETY: we are calling set_var in a single-threaded context.
             Some(backend) => unsafe { std::env::set_var("GDK_BACKEND", backend) },
             None => unsafe { std::env::set_var("GDK_BACKEND", "x11") },
@@ -159,9 +124,9 @@ async fn main() -> ExitCode {
         platform::gtk::init().expect("Failed initializing GTK");
     }
 
-    let is_logged_in = fig_auth::is_logged_in().await;
+    let onboarding_complete = fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
 
-    if !is_logged_in {
+    if !onboarding_complete {
         tracing::info!("Showing onboarding");
     }
 
@@ -169,7 +134,7 @@ async fn main() -> ExitCode {
     let visible = !cli.no_dashboard;
 
     let autocomplete_enabled =
-        !fig_settings::settings::get_bool_or("autocomplete.disable", false) && is_logged_in && accessibility_enabled;
+        !fig_settings::settings::get_bool_or("autocomplete.disable", false) && accessibility_enabled;
 
     let mut webview_manager = WebviewManager::new(ctx, visible);
     webview_manager
@@ -177,7 +142,7 @@ async fn main() -> ExitCode {
             DASHBOARD_ID,
             build_dashboard,
             DashboardOptions {
-                show_onboarding: !is_logged_in,
+                show_onboarding: !onboarding_complete,
                 visible,
                 page,
             },
@@ -196,7 +161,7 @@ async fn main() -> ExitCode {
         .unwrap();
 
     webview_manager.run().await.unwrap();
-    fig_telemetry::finish_telemetry().await;
+
     ExitCode::SUCCESS
 }
 
@@ -210,7 +175,7 @@ fn parse_url_page(url: Option<&str>) -> Result<Option<String>, ExitCode> {
         Err(err) => {
             error!(%err, %url, "Failed to parse url");
             return Err(ExitCode::FAILURE);
-        },
+        }
     };
 
     if url.scheme() != URL_SCHEMA {
@@ -223,7 +188,7 @@ fn parse_url_page(url: Option<&str>) -> Result<Option<String>, ExitCode> {
         _ => {
             error!("Invalid deep link");
             None
-        },
+        }
     }))
 }
 
@@ -268,11 +233,11 @@ async fn allow_multiple_running_check(
                     Some(page) => {
                         eprintln!("Opening /{page}...");
                         Some(page)
-                    },
+                    }
                     None => {
                         eprintln!("Opening {PRODUCT_NAME} Window...");
                         None
-                    },
+                    }
                 };
 
                 if let Err(err) =
@@ -282,7 +247,7 @@ async fn allow_multiple_running_check(
                 }
 
                 return Some(ExitCode::SUCCESS);
-            },
+            }
             _ => (),
         }
     }
@@ -330,11 +295,11 @@ async fn allow_multiple_running_check(
                         Some(page) => {
                             eprintln!("Opening /{page}...");
                             Some(page)
-                        },
+                        }
                         None => {
                             eprintln!("Opening {PRODUCT_NAME} Window...");
                             None
-                        },
+                        }
                     };
 
                     if let Err(err) =
@@ -348,8 +313,8 @@ async fn allow_multiple_running_check(
                     Some(&uid) if uid == current_uid => {
                         on_match.await;
                         return Some(ExitCode::SUCCESS);
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }

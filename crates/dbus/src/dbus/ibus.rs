@@ -3,29 +3,13 @@
 use std::path::Path;
 use std::process::Output;
 
-use fig_os_shim::{
-    Context,
-    Fs,
-};
+use fig_os_shim::{Context, Fs};
 use thiserror::Error;
-use tracing::{
-    debug,
-    trace,
-};
-use zbus::zvariant::{
-    OwnedObjectPath,
-    OwnedValue,
-};
-use zbus::{
-    Connection,
-    ConnectionBuilder,
-    proxy,
-};
+use tracing::{debug, trace};
+use zbus::zvariant::{OwnedObjectPath, OwnedValue};
+use zbus::{Connection, ConnectionBuilder, proxy};
 
-use super::{
-    CrateError,
-    ibus_bus,
-};
+use super::{CrateError, ibus_bus};
 
 #[derive(Debug, Error)]
 pub enum AddressError {

@@ -1,10 +1,7 @@
 use std::ffi::OsStr;
 #[cfg(target_os = "linux")]
 use std::ffi::OsString;
-use std::fmt::{
-    Display,
-    Formatter,
-};
+use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 
 #[cfg(unix)]

@@ -1,10 +1,5 @@
 #[cfg(unix)]
-use std::os::unix::io::{
-    AsRawFd,
-    BorrowedFd,
-    FromRawFd,
-    RawFd,
-};
+use std::os::unix::io::{AsRawFd, BorrowedFd, FromRawFd, RawFd};
 #[cfg(all(unix, not(feature = "tokio")))]
 use std::os::unix::net::UnixStream;
 #[cfg(not(feature = "tokio"))]
@@ -12,11 +7,7 @@ use std::sync::Arc;
 #[cfg(unix)]
 use std::{
     future::poll_fn,
-    io::{
-        self,
-        IoSlice,
-        IoSliceMut,
-    },
+    io::{self, IoSlice, IoSliceMut},
     os::fd::OwnedFd,
     task::Poll,
 };
@@ -26,14 +17,7 @@ use async_io::Async;
 #[cfg(unix)]
 use nix::{
     cmsg_space,
-    sys::socket::{
-        ControlMessage,
-        ControlMessageOwned,
-        MsgFlags,
-        UnixAddr,
-        recvmsg,
-        sendmsg,
-    },
+    sys::socket::{ControlMessage, ControlMessageOwned, MsgFlags, UnixAddr, recvmsg, sendmsg},
 };
 #[cfg(all(windows, not(feature = "tokio")))]
 use uds_windows::UnixStream;
@@ -231,10 +215,7 @@ impl super::ReadHalf for Arc<Async<UnixStream>> {
         let stream = self.clone();
         crate::Task::spawn_blocking(
             move || {
-                use crate::win32::{
-                    ProcessToken,
-                    unix_stream_get_peer_pid,
-                };
+                use crate::win32::{ProcessToken, unix_stream_get_peer_pid};
 
                 let pid = unix_stream_get_peer_pid(stream.get_ref())? as _;
                 let sid = ProcessToken::open(if pid != 0 { Some(pid as _) } else { None })

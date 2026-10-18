@@ -5,10 +5,7 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 use zbus::Connection;
 
-pub use self::ibus::{
-    AddressError,
-    connect_to_ibus_daemon,
-};
+pub use self::ibus::{AddressError, connect_to_ibus_daemon};
 
 pub mod gnome_shell;
 pub mod ibus;
