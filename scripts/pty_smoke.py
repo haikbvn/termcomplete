@@ -63,8 +63,10 @@ for shell, options in [("/bin/bash", ["--noprofile", "--norc", "-i"]), ("/bin/zs
             os.write(master, b"printf '%s\\n' CURSOR_AB\x1b[DX\r")
             wait_for(master, b"\r\nCURSOR_AXB\r\n", transcript)
             fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", 37, 120, 0, 0))
-            os.write(master, b"stty size\r")
-            wait_for(master, b"\r\n37 120\r\n", transcript)
+            # A resize can redraw the prompt between command echo and output.
+            # Use a distinct output marker rather than depending on that echo.
+            os.write(master, b"printf '\\nTCOMP_SIZE=%s\\n' \"$(stty size)\"\r")
+            wait_for(master, b"\r\nTCOMP_SIZE=37 120\r\n", transcript)
             os.write(master, b"sleep 30\r")
             time.sleep(0.2)
             os.write(master, b"\x03printf '\\nTCOMP_CANCELLED\\n'\r")

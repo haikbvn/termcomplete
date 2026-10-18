@@ -249,8 +249,8 @@ impl InputMethod {
     pub fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
         debug!("Registering input source...");
 
-        // LaunchServices does not recognize the symlink as an application.
-        // Register the actual embedded bundle before registering its input-source link.
+        // Both services need the actual bundle. Registering the installation
+        // symlink can remove the source from TIS after an application upgrade.
         let actual_path = location
             .as_ref()
             .canonicalize()
@@ -261,13 +261,8 @@ impl InputMethod {
             return Err(InputMethodError::OSStatusError(status));
         }
 
-        let url = match CFURL::from_path(location, true) {
-            Some(url) => url,
-            None => return Err(InputMethodError::InvalidDestination),
-        };
-
         unsafe {
-            match TISRegisterInputSource(url.as_concrete_TypeRef()) {
+            match TISRegisterInputSource(actual_url.as_concrete_TypeRef()) {
                 0 => Ok(()),
                 i => Err(InputMethodError::OSStatusError(i)),
             }
