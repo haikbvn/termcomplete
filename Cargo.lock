@@ -1523,6 +1523,7 @@ dependencies = [
  "core-graphics",
  "dashmap",
  "dbus",
+ "dispatch",
  "fig_desktop_api",
  "fig_integrations",
  "fig_ipc",

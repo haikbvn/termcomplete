@@ -84,6 +84,12 @@ where
 
                 debug!(status = %response.status(), "Custom proto response");
 
+                // Wry 0.48 checks WKURLSchemeTask lifetime while WebKit cancels
+                // tasks on the main thread. Serialize those operations to avoid
+                // answering a task between its validity check and cancellation.
+                #[cfg(target_os = "macos")]
+                dispatch::Queue::main().exec_async(move || responder.respond(response));
+                #[cfg(not(target_os = "macos"))]
                 responder.respond(response);
             }
             .in_current_span(),
