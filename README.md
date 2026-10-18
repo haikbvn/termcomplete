@@ -34,6 +34,7 @@ tcomp settings autocomplete.disable true
 tcomp settings autocomplete.disable --delete
 tcomp theme --list
 tcomp install --shell-only  # install hooks without registering the input method
+tcomp install --input-method-only # register/activate only the cursor helper
 tcomp install           # install Bash/Zsh hooks and input method
 tcomp uninstall         # remove owned hooks and input-method registration
 ```

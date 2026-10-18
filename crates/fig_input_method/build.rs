@@ -100,6 +100,10 @@ fn main() {
 
     let manifest = toml::from_str::<CargoToml>(&config).unwrap();
     let mut bundle = manifest.package.metadata.bundle;
+    assert!(
+        bundle.bundle_identifier.contains(".inputmethod."),
+        "The macOS input-method identifier must contain .inputmethod."
+    );
 
     // Set InputMethodServerControllerClass env var which is used by Input Method at compile time
     println!(

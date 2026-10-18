@@ -46,11 +46,15 @@ enum Commands {
     Install {
         #[arg(long)]
         shell_only: bool,
+        #[arg(long, conflicts_with = "shell_only")]
+        input_method_only: bool,
     },
     /// Remove Termcomplete shell integration and input-method registration
     Uninstall {
         #[arg(long)]
         shell_only: bool,
+        #[arg(long, conflicts_with = "shell_only")]
+        input_method_only: bool,
     },
     /// Inspect local installation and permissions
     Doctor,
@@ -74,8 +78,14 @@ impl Cli {
         fig_settings::settings::init_global().ok();
         match self.command {
             None | Some(Commands::Dashboard) | Some(Commands::Launch) => standalone::dashboard().await,
-            Some(Commands::Install { shell_only }) => standalone::install(false, shell_only).await,
-            Some(Commands::Uninstall { shell_only }) => standalone::install(true, shell_only).await,
+            Some(Commands::Install {
+                shell_only,
+                input_method_only,
+            }) => standalone::install(false, shell_only, input_method_only).await,
+            Some(Commands::Uninstall {
+                shell_only,
+                input_method_only,
+            }) => standalone::install(true, shell_only, input_method_only).await,
             Some(Commands::Doctor) => standalone::doctor().await,
             Some(Commands::Settings { key, value, delete }) => standalone::settings(key, value, delete),
             Some(Commands::Theme(args)) => args.execute().await,

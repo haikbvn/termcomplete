@@ -17,6 +17,13 @@ fn standalone_command_contract() {
     for command in ["login", "chat", "translate", "agent"] {
         assert!(!cli().args([command, "--help"]).status().unwrap().success());
     }
+    for command in ["install", "uninstall"] {
+        let result = cli()
+            .args([command, "--shell-only", "--input-method-only"])
+            .output()
+            .unwrap();
+        assert!(!result.status.success(), "Conflicting install scopes must be rejected");
+    }
     let version = cli().arg("--version").output().unwrap();
     assert!(version.status.success());
     assert_eq!(
@@ -47,6 +54,25 @@ fn settings_keep_json_types_and_unrelated_keys() {
     let settings: serde_json::Value = serde_json::from_slice(&run(&["settings"])).unwrap();
     assert_eq!(settings["appearance.theme"], "dark");
     assert!(settings.get("autocomplete.disable").is_none());
+}
+
+#[test]
+fn cursor_helper_activation_errors_are_structured() {
+    for enable in [false, true] {
+        let mut command = cli();
+        command.args([
+            "internal",
+            "attempt-to-finish-input-method-installation",
+            "relative.app",
+        ]);
+        if enable {
+            command.arg("--enable");
+        }
+        let result = command.output().unwrap();
+        assert!(!result.status.success());
+        let error: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+        assert_eq!(error, "InvalidBundlePath");
+    }
 }
 
 #[test]

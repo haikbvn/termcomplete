@@ -25,6 +25,8 @@ pub enum InternalSubcommand {
     },
     AttemptToFinishInputMethodInstallation {
         bundle_path: Option<PathBuf>,
+        #[arg(long)]
+        enable: bool,
     },
 }
 impl InternalSubcommand {
@@ -49,8 +51,13 @@ impl InternalSubcommand {
             }
             Self::SocketsDir => println!("{}", directories::sockets_dir()?.display()),
             Self::FigtermSocketPath { session_id } => println!("{}", figterm_socket_path(&session_id)?.display()),
-            Self::AttemptToFinishInputMethodInstallation { bundle_path } => {
-                fig_integrations::input_method::InputMethod::finish_input_method_installation(bundle_path)?
+            Self::AttemptToFinishInputMethodInstallation { bundle_path, enable } => {
+                if let Err(error) =
+                    fig_integrations::input_method::InputMethod::finish_input_method_installation(bundle_path, enable)
+                {
+                    println!("{}", serde_json::to_string(&error)?);
+                    return Ok(ExitCode::FAILURE);
+                }
             }
         }
         Ok(ExitCode::SUCCESS)

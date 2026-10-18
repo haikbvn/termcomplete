@@ -13,21 +13,23 @@ pub async fn dashboard() -> Result<ExitCode> {
     fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, None).await?;
     Ok(ExitCode::SUCCESS)
 }
-pub async fn install(uninstall: bool, shell_only: bool) -> Result<ExitCode> {
+pub async fn install(uninstall: bool, shell_only: bool, input_method_only: bool) -> Result<ExitCode> {
     let env = fig_os_shim::Env::new();
-    for shell in [Shell::Bash, Shell::Zsh] {
-        for script in shell.get_script_integrations()? {
-            if uninstall {
-                script.uninstall().await?;
-            } else {
-                script.install().await?;
+    if !input_method_only {
+        for shell in [Shell::Bash, Shell::Zsh] {
+            for script in shell.get_script_integrations()? {
+                if uninstall {
+                    script.uninstall().await?;
+                } else {
+                    script.install().await?;
+                }
             }
-        }
-        for integration in shell.get_shell_integrations(&env)? {
-            if uninstall {
-                integration.uninstall().await?;
-            } else {
-                integration.install().await?;
+            for integration in shell.get_shell_integrations(&env)? {
+                if uninstall {
+                    integration.uninstall().await?;
+                } else {
+                    integration.install().await?;
+                }
             }
         }
     }
@@ -40,7 +42,7 @@ pub async fn install(uninstall: bool, shell_only: bool) -> Result<ExitCode> {
         }
     }
     println!(
-        "{} Termcomplete shell integration. Restart your terminal.",
+        "{} Termcomplete integration. Restart your terminal.",
         if uninstall { "Removed" } else { "Installed" }
     );
     Ok(ExitCode::SUCCESS)

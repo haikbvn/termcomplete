@@ -21,7 +21,7 @@ Host: macOS 14.8.9, x86_64, Xcode 16.2. Isolated tools: Rust 1.87.0, Node 22.19.
 
 - Native CLI, desktop, PTY and input-method helper compiled; both UI bundles built.
 - Directory-isolation tests passed (15 tests), including the macOS socket-path length limit. The private runtime subdirectory is `tcomp`; data remains under `termcomplete`.
-- Six native crate suites passed (70 tests, 10 ignored). Input-method tests requiring OS registration remain ignored.
+- Six native crate suites passed (71 tests, 10 ignored). Input-method tests requiring OS registration remain ignored.
 - JavaScript parser, suggestion and generator suites passed (179 tests). Upstream TODO suites remain explicitly skipped; they are not validation evidence.
 - Five added generator regressions cover Unicode output, missing tools, failed/offline generators, timeouts and out-of-order responses.
 - Four bundled-catalog tests passed; 718 commands and all four versioned catalogs are present.

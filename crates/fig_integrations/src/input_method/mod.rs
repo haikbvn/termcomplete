@@ -103,6 +103,10 @@ pub enum InputMethodError {
     NotSelected,
     #[error("Input method not running")]
     NotRunning,
+    #[error(
+        "macOS has not finished activating the cursor helper. Quit and reopen Termcomplete, then retry Setup. Last error: {last_error}"
+    )]
+    RegistrationTimeout { last_error: String },
     #[error("An unknown error occurred")]
     UnknownError,
     #[error("Not installed")]
@@ -264,7 +268,7 @@ impl InputMethod {
     }
 
     pub fn list_input_sources_for_bundle_id(bundle_id: &str) -> Option<Vec<TISInputSource>> {
-        let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };
+        let key: CFString = unsafe { CFString::wrap_under_get_rule(kTISPropertyBundleID) };
         let value = CFString::from(bundle_id);
         let properties = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
 
@@ -487,18 +491,11 @@ impl Integration for InputMethod {
 
             debug!("Launch Input Method...");
             if let Some(dest) = destination.to_str() {
-                Command::new("open").arg(dest);
+                Command::new("open")
+                    .arg(dest)
+                    .spawn()
+                    .with_context(|_| "Could not launch the cursor helper".to_owned())?;
             }
-
-            run_on_main(|| {
-                let source = self.input_source()?;
-                source.enable()?;
-                Ok::<(), InputMethodError>(())
-            })?;
-
-            // The 'enabled' property of an input source is never updated for the process that
-            // invokes `TISEnableInputSource` Unclear why this is, but we handle it by
-            // calling out to the q_cli to finish the second half of the installation.
         }
 
         // todo: pull this into a function in fig_directories
@@ -507,27 +504,47 @@ impl Integration for InputMethod {
             .join("MacOS")
             .join(CLI_BINARY_NAME);
 
-        loop {
-            let out = tokio::process::Command::new(&q_cli_path)
+        // TIS caches source lists and enabled flags in the calling process.
+        // Activate in a fresh CLI process, then verify in a second fresh process.
+        // In particular, do not query the desktop's pre-registration snapshot.
+        let mut enable = true;
+        let mut installed = false;
+        let mut last_error = String::from("The helper is not visible to macOS yet");
+        for _ in 0..15 {
+            let mut command = tokio::process::Command::new(&q_cli_path);
+            command
                 .args(["_", "attempt-to-finish-input-method-installation"])
                 .arg(&self.bundle_path)
-                .output()
-                .await
-                .with_context(|err| format!("Could not run {CLI_BINARY_NAME} cli: {err}"))?;
-
-            if out.status.code() == Some(0) {
-                info!("Input method installed successfully!");
-                break;
-            } else {
-                let err = String::from_utf8_lossy(&out.stdout);
-                match serde_json::from_str::<InputMethodError>(&err).ok() {
-                    Some(error) => debug!("{error}"),
-                    None => debug!("Could not parse output as known error: {err}"),
-                }
+                .kill_on_drop(true);
+            if enable {
+                command.arg("--enable");
             }
-
+            match tokio::time::timeout(std::time::Duration::from_secs(3), command.output()).await {
+                Ok(Ok(out)) if out.status.success() => {
+                    if enable {
+                        enable = false;
+                        continue;
+                    }
+                    installed = true;
+                    break;
+                }
+                Ok(Ok(out)) => {
+                    last_error = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+                    if last_error.is_empty() {
+                        last_error = String::from_utf8_lossy(&out.stderr).trim().to_owned();
+                    }
+                    debug!(%last_error, "Cursor helper activation is not ready");
+                    enable = true;
+                }
+                Ok(Err(error)) => return Err(error).with_context(|_| format!("Could not run {CLI_BINARY_NAME} cli")),
+                Err(_) => last_error = String::from("The activation process timed out"),
+            }
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
+        if !installed {
+            return Err(InputMethodError::RegistrationTimeout { last_error }.into());
+        }
+        info!("Input method installed successfully!");
 
         // Store PIDs of all relevant terminal emulators (input method will not work until these
         // processes are restarted)
@@ -617,7 +634,10 @@ impl Integration for InputMethod {
 
 impl InputMethod {
     // Called from separate process in order to check status of Input Method
-    pub fn finish_input_method_installation(bundle_path: Option<PathBuf>) -> Result<(), InputMethodError> {
+    pub fn finish_input_method_installation(
+        bundle_path: Option<PathBuf>,
+        enable: bool,
+    ) -> Result<(), InputMethodError> {
         let input_method = match bundle_path {
             Some(bundle_path) if bundle_path.is_absolute() => InputMethod { bundle_path },
             Some(_) => return Err(InputMethodError::InvalidBundlePath),
@@ -625,6 +645,12 @@ impl InputMethod {
         };
 
         let source = input_method.input_source()?;
+
+        if enable {
+            source.enable()?;
+            // Verify properties from another process; this snapshot can be stale.
+            return Ok(());
+        }
 
         if !source.is_enabled().unwrap_or_default() {
             return Err(InputMethodError::NotEnabled);
@@ -697,7 +723,7 @@ mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
-    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.github.haikbvn.termcomplete.inputmethod";
+    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.github.haikbvn.termcomplete.inputmethod.cursor";
     const TEST_INPUT_METHOD_BUNDLE_URL: &str =
         "/Applications/Termcomplete.app/Contents/Helpers/TermcompleteInputMethod.app";
 
